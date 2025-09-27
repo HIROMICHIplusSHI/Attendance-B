@@ -13,20 +13,20 @@ RSpec.describe Attendance, type: :model do
     it '勤務日が必須であること' do
       attendance.worked_on = nil
       expect(attendance).not_to be_valid
-      expect(attendance.errors[:worked_on]).to include("can't be blank")
+      expect(attendance.errors[:worked_on]).to include("を入力してください")
     end
 
     it '同一ユーザーの同一日付で重複が許可されないこと' do
       user.attendances.create!(worked_on: Date.current)
       duplicate_attendance = user.attendances.build(worked_on: Date.current)
       expect(duplicate_attendance).not_to be_valid
-      expect(duplicate_attendance.errors[:worked_on]).to include("has already been taken")
+      expect(duplicate_attendance.errors[:worked_on]).to include("はすでに存在します")
     end
 
     it '備考が50文字以内であること' do
       attendance.note = 'a' * 51
       expect(attendance).not_to be_valid
-      expect(attendance.errors[:note]).to include("is too long (maximum is 50 characters)")
+      expect(attendance.errors[:note]).to include("は50文字以内で入力してください")
     end
   end
 

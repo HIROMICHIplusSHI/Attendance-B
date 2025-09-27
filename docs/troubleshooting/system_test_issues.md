@@ -233,6 +233,146 @@ end
 - 前回の SessionsController で同様の問題を解決済み
 - Git履歴から過去の解決策を参照可能
 
+## 8. System Spec エラーページ問題
+
+### 問題の発生
+**エラー内容:**
+```
+Page title: Action Controller: Exception caught
+Capybara::ElementNotFound: Unable to find link "ログアウト"
+```
+
+**現象:**
+- ログイン成功後にエラーページが表示される
+- 「ログアウト」リンクが見つからない
+- System specで一貫してエラーページが表示される
+
+### 調査過程
+1. **ログイン処理確認**: SessionsControllerは正常動作
+2. **リダイレクト確認**: Users#showへのリダイレクトは成功
+3. **ビューテンプレート確認**: users/show.html.erbでエラー発生
+4. **簡素化テスト**: 最小限のビューでテスト成功
+
+### 根本原因の特定
+**主要原因: ロケール設定不備**
+- `l(@first_day, format: :middle)` でロケールエラー
+- `config/application.rb`に日本語ロケール設定が未定義
+- I18n設定不足により日付フォーマットが失敗
+
+**副次原因: ヘルパーメソッドのnil処理不足**
+- `format_basic_info(@user.basic_time)` でnilエラーの可能性
+- `working_times(start, finish)` でnilパラメータ処理不足
+
+### 解決策
+
+#### ロケール設定追加
+```ruby
+# config/application.rb
+module App
+  class Application < Rails::Application
+    # 日本語ロケール設定
+    config.i18n.default_locale = :ja
+    config.time_zone = 'Tokyo'
+  end
+end
+```
+
+#### ヘルパーメソッドの安全性向上
+```ruby
+# app/helpers/users_helper.rb
+def format_basic_info(time)
+  return "未設定" if time.nil?
+
+  hour = time.hour
+  min = time.min
+  format("%.2f", hour + (min / 60.0))
+end
+
+# app/helpers/attendances_helper.rb
+def working_times(start, finish)
+  return "未計算" if start.nil? || finish.nil?
+
+  format("%.2f", (((finish - start) / 60) / 60.0))
+end
+```
+
+#### 日本語ロケールファイル
+```yaml
+# config/locales/ja.yml
+ja:
+  date:
+    formats:
+      default: "%Y/%m/%d"
+      short: "%-m/%-d"
+      middle: "%Y年%m月"
+  time:
+    formats:
+      default: "%Y年%m月%d日(%a) %H時%M分%S秒 %z"
+      short: "%m/%d %H:%M"
+```
+
+### 学習ポイント
+- **デバッグの重要性**: エラーページ内容を確認してHTMLレベルで問題を特定
+- **段階的調査**: 簡素化ビューでのテストにより問題箇所を絞り込み
+- **ロケール設定**: Rails 7では明示的なロケール設定が重要
+- **エラー処理**: ヘルパーメソッドでのnil値処理を適切に実装
+- **System vs Request**: System specは実際のHTML描画エラーも検出
+
+## 9. ModelSpec 日本語化対応
+
+### 問題の発生
+**エラー内容:**
+```
+expected ["を入力してください"] to include "can't be blank"
+expected ["はすでに存在します"] to include "has already been taken"
+expected ["は50文字以内で入力してください"] to include "is too long (maximum is 50 characters)"
+```
+
+**原因:**
+- ロケール設定により Rails のエラーメッセージが日本語化された
+- テストは英語メッセージを期待していた
+- CI環境でテストが失敗する状況
+
+### 解決策
+**テストメッセージの日本語化:**
+
+```ruby
+# spec/models/attendance_spec.rb - 修正前後
+# 修正前
+expect(attendance.errors[:worked_on]).to include("can't be blank")
+expect(duplicate_attendance.errors[:worked_on]).to include("has already been taken")
+expect(attendance.errors[:note]).to include("is too long (maximum is 50 characters)")
+
+# 修正後
+expect(attendance.errors[:worked_on]).to include("を入力してください")
+expect(duplicate_attendance.errors[:worked_on]).to include("はすでに存在します")
+expect(attendance.errors[:note]).to include("は50文字以内で入力してください")
+
+# spec/models/user_spec.rb - 修正前後
+# 修正前
+expect(user.errors[:name]).to include("can't be blank")
+expect(user.errors[:email]).to include("can't be blank")
+expect(user.errors[:password]).to include("can't be blank")
+expect(user.errors[:email]).to include("has already been taken")
+
+# 修正後
+expect(user.errors[:name]).to include("を入力してください")
+expect(user.errors[:email]).to include("を入力してください")
+expect(user.errors[:password]).to include("を入力してください")
+expect(user.errors[:email]).to include("はすでに存在します")
+```
+
+### 結果
+- **✅ ModelSpec 全テスト成功** (13 examples, 0 failures)
+- **✅ CI環境での一貫性確保**
+- **✅ 日本語エラーメッセージとの整合性**
+
+### 学習ポイント
+- **国際化対応**: ロケール設定変更がテストに与える影響
+- **CI/CD 品質**: テストメッセージの一貫性がCI成功の鍵
+- **継続的品質**: 小さなエラーもCI環境では致命的
+- **実装完了度**: 全テスト成功状態での機能リリース
+
 ## 7. CI/CD 環境構築の完全トラブルシューティング
 
 ### 背景
@@ -431,6 +571,9 @@ bundle update          # 依存関係破壊リスク
 - **✅ Host Authorization問題解決**
 - **✅ AbcSize複雑度問題解決**
 - **✅ RuboCop全チェック通過** (54ファイル、違反0)
+- **✅ System Specエラーページ問題解決**
+- **✅ ロケール設定問題解決**
+- **✅ ModelSpec日本語化完了**
 
 ### CI/CD 環境構築
 - **✅ Docker + GitHub Actions パイプライン完全成功**
