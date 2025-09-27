@@ -127,8 +127,7 @@ GEM
       railties (>= 5.0.0)
     faker (3.2.3)
       i18n (>= 1.8.11, < 2)
-    ffi (1.17.2)
-    ffi (1.17.2-x86_64-linux-gnu)
+    ffi (1.17.2-aarch64-linux-gnu)
     globalid (1.3.0)
       activesupport (>= 6.1)
     i18n (1.14.7)
@@ -178,7 +177,6 @@ GEM
     marcel (1.1.0)
     matrix (0.4.3)
     mini_mime (1.1.5)
-    mini_portile2 (2.8.9)
     minitest (5.25.5)
     msgpack (1.8.0)
     mutex_m (0.3.0)
@@ -194,10 +192,7 @@ GEM
     net-smtp (0.5.1)
       net-protocol
     nio4r (2.7.4)
-    nokogiri (1.18.10)
-      mini_portile2 (~> 2.8.2)
-      racc (~> 1.4)
-    nokogiri (1.18.10-x86_64-linux-gnu)
+    nokogiri (1.18.10-aarch64-linux-gnu)
       racc (~> 1.4)
     parallel (1.27.0)
     parser (3.3.9.0)
@@ -302,19 +297,6 @@ GEM
     rubocop-ast (1.47.1)
       parser (>= 3.3.7.2)
       prism (~> 1.4)
-    rubocop-capybara (2.21.0)
-      rubocop (~> 1.41)
-    rubocop-factory_bot (2.26.0)
-      rubocop (~> 1.41)
-    rubocop-rails (2.22.2)
-      activesupport (>= 4.2.0)
-      rack (>= 1.1)
-      rubocop (>= 1.33.0, < 2.0)
-      rubocop-ast (>= 1.30.0, < 2.0)
-    rubocop-rspec (2.25.0)
-      rubocop (~> 1.40)
-      rubocop-capybara (~> 2.17)
-      rubocop-factory_bot (~> 2.22)
     ruby-progressbar (1.13.0)
     rubyzip (2.4.1)
     sassc (2.4.0)
@@ -374,8 +356,7 @@ GEM
     zeitwerk (2.7.3)
 
 PLATFORMS
-  ruby
-  x86_64-linux
+  aarch64-linux
 
 DEPENDENCIES
   bcrypt (~> 3.1.20)
@@ -399,8 +380,6 @@ DEPENDENCIES
   rails-i18n (~> 7.0.8)
   rspec-rails (~> 6.1.0)
   rubocop (~> 1.57.2)
-  rubocop-rails (~> 2.22.2)
-  rubocop-rspec (~> 2.25.0)
   sassc-rails (~> 2.1.2)
   selenium-webdriver (~> 4.15.0)
   shoulda-matchers (~> 6.0.0)
@@ -414,4 +393,4 @@ RUBY VERSION
    ruby 3.2.4p170
 
 BUNDLED WITH
-   2.5.0
+   2.4.19
