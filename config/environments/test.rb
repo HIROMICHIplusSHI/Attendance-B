@@ -63,5 +63,6 @@ Rails.application.configure do
   config.action_controller.raise_on_missing_callback_actions = true
 
   # Disable host checking in test environment
-  config.hosts = nil
+  config.hosts.clear
+  config.host_authorization = { exclude: ->(_request) { true } }
 end

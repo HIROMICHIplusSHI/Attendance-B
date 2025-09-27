@@ -27,9 +27,10 @@ RSpec.configure do |config|
     driven_by :rack_test
   end
 
-  # RequestテストでCSRF保護を無効化
+  # RequestテストでCSRF保護を無効化とホスト設定
   config.before(:each, type: :request) do
     ActionController::Base.allow_forgery_protection = false
+    host! 'localhost'
   end
 
   config.after(:each, type: :request) do
