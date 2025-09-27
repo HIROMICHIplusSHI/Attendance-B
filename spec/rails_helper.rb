@@ -13,7 +13,7 @@ rescue ActiveRecord::PendingMigrationError => e
 end
 
 # Capybara設定
-Capybara.default_host = 'http://example.com'
+Capybara.default_host = 'http://localhost'
 Capybara.always_include_port = true
 
 RSpec.configure do |config|
