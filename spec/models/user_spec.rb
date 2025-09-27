@@ -21,7 +21,7 @@ RSpec.describe User, type: :model do
     end
 
     it 'パスワードが必須であること' do
-      user.password = ""
+      user = User.new(name: "テスト太郎", email: "test@example.com", password: "")
       expect(user).not_to be_valid
       expect(user.errors[:password]).to include("can't be blank")
     end
