@@ -1,2 +1,22 @@
-<h1>Users#new</h1>
-<p>Find me in app/views/users/new.html.erb</p>
+<% provide(:title, "アカウント作成") %>
+<h1>アカウント作成</h1>
+<div class="row">
+  <div class="col-md-6 col-md-offset-3">
+    <%= form_with(model: @user, local: true) do |f| %>
+
+      <%= f.label :name, "名前", class: "label-signup" %>
+      <%= f.text_field :name, class: "form-control" %>
+
+      <%= f.label :email, "メールアドレス", class: "label-signup" %>
+      <%= f.email_field :email, class: "form-control" %>
+
+      <%= f.label :password, "パスワード", class: "label-signup" %>
+      <%= f.password_field :password, class: "form-control" %>
+
+      <%= f.label :password_confirmation, "パスワード確認", class: "label-signup" %>
+      <%= f.password_field :password_confirmation, class: "form-control" %>
+
+      <%= f.submit "アカウント作成", class: "btn btn-primary btn-block btn-signup" %>
+    <% end %>
+  </div>
+</div>
