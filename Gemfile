@@ -41,8 +41,8 @@ group :development do
   gem "web-console", "~> 4.2.1"
   gem "listen", "~> 3.8.0"
   gem "rubocop", "~> 1.57.2"
-  gem "rubocop-rails", "~> 2.22.2"
-  gem "rubocop-rspec", "~> 2.25.0"
+  # gem "rubocop-rails", "~> 2.22.2"   # 一時的に無効化
+  # gem "rubocop-rspec", "~> 2.25.0"   # 一時的に無効化
 end
 
 group :test do
