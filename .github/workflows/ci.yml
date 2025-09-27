@@ -48,7 +48,6 @@ jobs:
       env:
         RAILS_ENV: test
         DB_HOST: 127.0.0.1
-        DATABASE_URL: mysql2://root:password@127.0.0.1:3306/attendance_app_test
       run: |
         bundle exec rails db:create
         bundle exec rails db:migrate
@@ -60,7 +59,6 @@ jobs:
       env:
         RAILS_ENV: test
         DB_HOST: 127.0.0.1
-        DATABASE_URL: mysql2://root:password@127.0.0.1:3306/attendance_app_test
       run: bundle exec rspec
 
   build_status:
