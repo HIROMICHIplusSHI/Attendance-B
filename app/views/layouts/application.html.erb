@@ -10,17 +10,11 @@
   </head>
 
   <body>
+    <%= render 'shared/header' %>
     <div class="container">
-      <% if logged_in? %>
-        <div class="text-right">
-          <%= link_to "ログアウト", logout_path, data: { "turbo-method": :delete } %>
-        </div>
-      <% end %>
-      <% flash.each do |message_type, message| %>
-        <div class="alert alert-<%= message_type == 'success' ? 'info' : message_type %>">
-          <%= message %>
-        </div>
-      <% end %>
+      <div id="flash">
+        <%= render "shared/flash_messages" %>
+      </div>
       <%= yield %>
     </div>
   </body>
