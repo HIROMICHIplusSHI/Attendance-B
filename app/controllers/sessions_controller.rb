@@ -2,14 +2,11 @@ class SessionsController < ApplicationController
   def new; end
 
   def create
-    user = User.find_by(email: params[:session][:email].downcase)
-    if user&.authenticate(params[:session][:password])
-      log_in user
-      flash[:success] = 'ログインしました'
-      redirect_to user
+    user = find_user
+    if authenticate_user(user)
+      successful_login(user)
     else
-      flash.now[:danger] = 'メールアドレスまたはパスワードが正しくありません'
-      render 'new'
+      failed_login
     end
   end
 
@@ -17,5 +14,26 @@ class SessionsController < ApplicationController
     log_out
     flash[:info] = 'ログアウトしました'
     redirect_to root_url
+  end
+
+  private
+
+  def find_user
+    User.find_by(email: params[:session][:email].downcase)
+  end
+
+  def authenticate_user(user)
+    user&.authenticate(params[:session][:password])
+  end
+
+  def successful_login(user)
+    log_in user
+    flash[:success] = 'ログインしました'
+    redirect_to user
+  end
+
+  def failed_login
+    flash.now[:danger] = 'メールアドレスまたはパスワードが正しくありません'
+    render 'new'
   end
 end
