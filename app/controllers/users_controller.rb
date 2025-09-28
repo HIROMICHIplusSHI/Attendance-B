@@ -31,6 +31,8 @@ class UsersController < ApplicationController
     set_month_range
     @attendances = fetch_monthly_attendances
     create_missing_attendance_records
+    @worked_sum = @attendances.where.not(started_at: nil, finished_at: nil).count
+    @total_working_times = 0.0
   end
 
   def user_params

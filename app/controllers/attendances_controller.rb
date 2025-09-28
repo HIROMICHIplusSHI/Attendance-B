@@ -3,6 +3,11 @@ class AttendancesController < ApplicationController
   before_action :set_user
   before_action :set_attendance, only: [:update]
 
+  def edit_one_month
+    # 1ヶ月の勤怠編集ページ（まだ実装していないのでリダイレクト）
+    redirect_to @user, notice: '1ヶ月の勤怠編集機能は現在開発中です'
+  end
+
   def update
     if params[:attendance][:started_at].present?
       update_started_at

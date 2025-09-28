@@ -1,94 +1,90 @@
 <% provide(:title, @user.name) %>
+<div>
+  <!-- クローン元完全再現：2行×4列ユーザー情報テーブル -->
+  <table class="table table-bordered table-condensed user-table">
+    <tr>
+      <td><%= @first_day.present? ? l(@first_day, format: :middle) : "日付取得エラー" %> 時間管理表</td>
+      <td>指定勤務時間：<%= format_basic_info(@user.work_time) %></td>
+      <td>基本時間：<%= format_basic_info(@user.basic_time) %></td>
+      <td>月初日：<%= @first_day.present? ? l(@first_day, format: :short) : "なし" %></td>
+    </tr>
 
-<div class="row">
-  <div class="col-md-12">
-    <!-- 月次ナビゲーション -->
-    <div class="text-center">
-      <%= link_to "⇐ 前月", user_path(@user, date: @first_day.prev_month), class: "btn btn-default" %>
-      <span class="h4"><%= l(@first_day, format: :middle) %></span>
-      <%= link_to "次月 ⇒", user_path(@user, date: @first_day.next_month), class: "btn btn-default" %>
-    </div>
+    <tr>
+      <td>所属：未所属</td>
+      <td>名前：<%= @user.name %></td>
+      <td>出勤日数：<%= @worked_sum %>日</td>
+      <td>月末日：<%= @last_day.present? ? l(@last_day, format: :short) : "なし" %></td>
+    </tr>
+  </table>
+</div>
 
-    <!-- 時間管理表ヘッダー -->
-    <table class="table table-bordered table-condensed user-table">
+<!-- クローン元完全再現：月次ナビゲーション（ユーザー情報テーブル下） -->
+<div class="btn-users-show">
+  <%= link_to "⇦ 前月へ", user_path(date: @first_day.prev_month), class: "btn btn-info" %>
+  <%= link_to "1ヶ月の勤怠編集へ", edit_one_month_user_attendances_path(@user, date: @first_day), class: "btn btn-success", data: { turbo: false } %>
+  <%= link_to "次月へ ⇨", user_path(date: @first_day.next_month), class: "btn btn-info" %>
+</div>
+
+<div>
+
+<div>
+  <!-- クローン元完全再現：7列シンプル勤怠テーブル -->
+  <table class="table table-bordered table-condensed table-hover text-center" id="table-attendances">
+    <thead>
       <tr>
-        <td><%= l(@first_day, format: :middle) %> 時間管理表</td>
-        <td>指定勤務時間：<%= format_basic_info(@user.work_time) %></td>
-        <td>基本時間：<%= format_basic_info(@user.basic_time) %></td>
-        <td>初日：<%= l(@first_day, format: :short) %></td>
+        <th class="text-center">日付</th>
+        <th class="text-center">曜日</th>
+        <th class="text-center">勤怠登録</th>
+        <th class="text-center">出勤時間</th>
+        <th class="text-center">退勤時間</th>
+        <th class="text-center">在社時間</th>
+        <th class="text-center">備考</th>
       </tr>
-    </table>
-
-    <!-- 勤怠テーブル -->
-    <table class="table table-bordered table-condensed table-hover text-center" id="table-attendances">
-      <thead>
-        <tr>
-          <th rowspan="3">残業申請</th>
-          <th rowspan="3">日付</th>
-          <th rowspan="3">曜日</th>
-          <th colspan="8">実績</th>
-          <th rowspan="3">備考</th>
-        </tr>
-        <tr>
-          <th colspan="3">出社</th>
-          <th colspan="3">退社</th>
-          <th rowspan="2">在社時間</th>
-          <th rowspan="2">備考</th>
-        </tr>
-        <tr>
-          <th>時</th>
-          <th>分</th>
-          <th></th>
-          <th>時</th>
-          <th>分</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody>
-        <% @attendances.each do |attendance| %>
-          <tr>
-            <td></td>
-            <td><%= l(attendance.worked_on, format: :short) %></td>
-            <td><%= ApplicationController::DAYS_OF_THE_WEEK[attendance.worked_on.wday] %></td>
-            <!-- 出勤時間 -->
-            <% if attendance_state(attendance) == '出勤' %>
-              <td colspan="3">
-                <%= form_with(model: [@user, attendance], local: true) do |f| %>
-                  <%= f.time_field :started_at, class: "form-control", style: "width: 80px; display: inline;" %>
-                  <%= f.submit "出勤", class: "btn btn-primary btn-xs" %>
-                <% end %>
-              </td>
-            <% else %>
-              <td><%= attendance.started_at&.hour %></td>
-              <td><%= attendance.started_at&.min %></td>
-              <td></td>
-            <% end %>
-
-            <!-- 退勤時間 -->
-            <% if attendance_state(attendance) == '退勤' %>
-              <td colspan="3">
-                <%= form_with(model: [@user, attendance], local: true) do |f| %>
-                  <%= f.time_field :finished_at, class: "form-control", style: "width: 80px; display: inline;" %>
-                  <%= f.submit "退勤", class: "btn btn-danger btn-xs" %>
-                <% end %>
-              </td>
-            <% else %>
-              <td><%= attendance.finished_at&.hour %></td>
-              <td><%= attendance.finished_at&.min %></td>
-              <td></td>
-            <% end %>
-
-            <!-- 在社時間 -->
-            <td>
-              <% if attendance.started_at.present? && attendance.finished_at.present? %>
-                <%= working_times(attendance.started_at, attendance.finished_at) %>
-              <% end %>
-            </td>
-            <td></td>
-            <td><%= attendance.note %></td>
-          </tr>
+    </thead>
+    <tbody>
+      <% @attendances.each do |day| %>
+      <tr>
+        <td class="text-center"><%= l(day.worked_on, format: :short) %></td>
+        <td class="text-center"><%= ApplicationController::DAYS_OF_THE_WEEK[day.worked_on.wday] %></td>
+        <td class="text-center">
+        <% if btn_text = attendance_state(day) %>
+          <%= link_to "#{btn_text}登録", user_attendance_path(@user, day),
+            data: { turbo_method: :patch },
+            class: "btn btn-primary btn-attendance" %>
         <% end %>
-      </tbody>
-    </table>
-  </div>
+        </td>
+        <td class="text-center"><%= l(day.started_at, format: :time) if day.started_at.present? %></td>
+        <td class="text-center"><%= l(day.finished_at, format: :time) if day.finished_at.present? %></td>
+        <td class="text-center">
+          <% if day.started_at.present? && day.finished_at.present? %>
+            <%= working_times(day.started_at, day.finished_at) %>
+          <% end %>
+        </td>
+        <td class="text-center"><%= day.note %></td>
+      </tr>
+      <% end %>
+    </tbody>
+    <!-- クローン元完全再現：統計フッター -->
+    <tfoot>
+      <tr>
+        <td colspan="2" class="text-center">累計日数</td>
+        <td colspan="2" class="text-center">総合勤務時間</td>
+        <td colspan="2" class="text-center">累計在社時間</td>
+        <td rowspan="2" class="text-center"></td>
+      </tr>
+      <tr>
+        <td colspan="2" class="text-center"><%= @attendances.count %></td>
+        <td colspan="2" class="text-center"><%= format_basic_info(@user.work_time).to_f * @worked_sum %></td>
+        <td colspan="2" class="text-center">
+          <% @total_working_times = @total_working_times.to_f %>
+          <% @attendances.each do |day| %>
+            <% if day.started_at.present? && day.finished_at.present? %>
+              <% @total_working_times += working_times(day.started_at, day.finished_at).to_f %>
+            <% end %>
+          <% end %>
+          <%= format("%.2f", @total_working_times) %>
+        </td>
+      </tr>
+    </tfoot>
+  </table>
 </div>
