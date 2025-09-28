@@ -50,8 +50,8 @@ RSpec.describe "UserPageRedesign", type: :request do
       end
 
       it "前月へボタンが存在している" do
-        expect(response.body).to include("⇦ 前月へ")
-        expect(response.body).to include('class="btn btn-info"')
+        expect(response.body).to include("⇦")
+        expect(response.body).to include('class="btn btn-info btn-sm"')
       end
 
       it "1ヶ月の勤怠編集へボタンが存在している" do
@@ -60,8 +60,8 @@ RSpec.describe "UserPageRedesign", type: :request do
       end
 
       it "次月へボタンが存在している" do
-        expect(response.body).to include("次月へ ⇨")
-        expect(response.body).to include('class="btn btn-info"')
+        expect(response.body).to include("⇨")
+        expect(response.body).to include('class="btn btn-info btn-sm"')
       end
     end
 
