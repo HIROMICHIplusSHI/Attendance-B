@@ -38,40 +38,6 @@
   width: 30%;
 }
 
-/* モーダル全体のスタイル調整 */
-.modal-content {
-  background-color: #fff;
-  border-radius: 6px;
-  box-shadow: 0 3px 9px rgba(0, 0, 0, 0.5);
-}
-
-.modal-header {
-  padding: 15px;
-  border-bottom: 1px solid #e5e5e5;
-
-  .close {
-    margin-top: -2px;
-    font-size: 21px;
-    font-weight: bold;
-    line-height: 1;
-    color: #000;
-    text-shadow: 0 1px 0 #fff;
-    opacity: 0.2;
-
-    &:hover {
-      opacity: 0.5;
-    }
-  }
-}
-
-.modal-body {
-  padding: 15px;
-}
-
-.modal-title {
-  margin: 0;
-  line-height: 1.42857143;
-}
 
 /* ユーザー勤怠情報テーブル */
 #table-attendances {
@@ -85,46 +51,3 @@
   }
 }
 
-/* 削除確認モーダルのスタイル */
-#deleteModal {
-  display: none; // 初期状態は非表示
-
-  .user-info {
-    background-color: #f9f9f9;
-    padding: 15px;
-    border-radius: 4px;
-    margin-top: 10px;
-
-    p {
-      margin: 5px 0;
-    }
-  }
-
-  .alert-danger {
-    margin-bottom: 15px;
-  }
-}
-
-/* モーダル背景オーバーレイ */
-.modal-backdrop {
-  position: fixed;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  left: 0;
-  z-index: 1040;
-  background-color: #000;
-
-  &.fade {
-    opacity: 0;
-  }
-
-  &.show {
-    opacity: 0.5;
-  }
-}
-
-/* モーダル表示時のbodyスクロール制御 */
-body.modal-open {
-  overflow: hidden;
-}

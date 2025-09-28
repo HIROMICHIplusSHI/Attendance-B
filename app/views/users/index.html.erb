@@ -64,14 +64,12 @@
           <td><%= user.department %></td>
           <td>
             <%= link_to "編集", edit_user_path(user), class: "btn btn-primary btn-sm" %>
-            <button type="button" class="btn btn-danger btn-sm"
-                    data-toggle="modal"
-                    data-target="#deleteModal"
-                    data-user-id="<%= user.id %>"
-                    data-user-name="<%= user.name %>"
-                    data-user-email="<%= user.email %>">
-              削除
-            </button>
+            <%= link_to "削除", user,
+                data: {
+                  turbo_method: :delete,
+                  turbo_confirm: "#{user.name}（#{user.email}）を削除してよろしいですか？"
+                },
+                class: "btn btn-danger btn-sm" %>
           </td>
         </tr>
       <% end %>
@@ -79,30 +77,3 @@
   </table>
 </div>
 
-<!-- 削除確認モーダル -->
-<div class="modal fade" id="deleteModal" tabindex="-1" role="dialog" aria-labelledby="deleteModalLabel">
-  <div class="modal-dialog" role="document">
-    <div class="modal-content">
-      <div class="modal-header">
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-          <span aria-hidden="true">&times;</span>
-        </button>
-        <h4 class="modal-title" id="deleteModalLabel">ユーザー削除確認</h4>
-      </div>
-      <div class="modal-body">
-        <div class="alert alert-danger">
-          <strong>警告:</strong> この操作は取り消せません。
-        </div>
-        <p>以下のユーザーを削除しますか？</p>
-        <div class="user-info">
-          <p><strong>名前:</strong> <span id="modalUserName"></span></p>
-          <p><strong>メール:</strong> <span id="modalUserEmail"></span></p>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-default" data-dismiss="modal">キャンセル</button>
-        <button type="button" class="btn btn-danger" id="confirmDelete">削除</button>
-      </div>
-    </div>
-  </div>
-</div>

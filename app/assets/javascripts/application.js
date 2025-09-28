@@ -1,3 +1,5 @@
+//= require turbo-rails
+
 /**
  * バニラJavaScript ドロップダウンメニュー実装
  * Bootstrap 3のCSSクラスと互換性のあるドロップダウン機能
