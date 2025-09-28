@@ -52,8 +52,6 @@ class ApplicationController < ActionController::Base
     calculate_work_statistics
   end
 
-  private
-
   def set_month_range
     @first_day = params[:date]&.to_date || Date.current.beginning_of_month
     @last_day = @first_day.end_of_month
