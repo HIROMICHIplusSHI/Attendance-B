@@ -1,0 +1,75 @@
+<% provide(:title, 'ユーザー一覧') %>
+<!-- ユーザー一覧タイトル（ページ上部センタ配置） -->
+<div class="row">
+  <div class="col-md-12 text-center">
+    <h1>ユーザー一覧</h1>
+  </div>
+</div>
+
+<!-- 検索フォーム（ページ右側配置） -->
+<div class="row">
+  <div class="col-md-12 text-right">
+    <%= form_with url: users_path, method: :get, local: true, class: "form-inline" do |f| %>
+      <div class="form-group">
+        <%= f.text_field :search, value: params[:search], placeholder: "ユーザー名で検索", class: "form-control input-sm", style: "width: 180px;" %>
+      </div>
+      <%= f.submit "検索", class: "btn btn-primary btn-sm" %>
+      <% if params[:search].present? %>
+        <%= link_to "リセット", users_path, class: "btn btn-default btn-sm" %>
+      <% end %>
+    <% end %>
+  </div>
+</div>
+
+<div class="col-md-10 col-md-offset-1">
+  <!-- ページネーション（上部左・ボタン化） -->
+  <div class="pagination-wrapper" style="margin-bottom: 20px;">
+    <div class="btn-group" role="group" aria-label="ページナビゲーション">
+      <% if @users.current_page > 1 %>
+        <%= link_to "最初", users_path(search: params[:search]), class: "btn btn-default btn-sm" %>
+        <%= link_to "前", users_path(page: @users.prev_page, search: params[:search]), class: "btn btn-default btn-sm" %>
+      <% end %>
+
+      <% (@users.current_page - 2..@users.current_page + 2).each do |page| %>
+        <% if page >= 1 && page <= @users.total_pages %>
+          <% if page == @users.current_page %>
+            <span class="btn btn-primary btn-sm active"><%= page %></span>
+          <% else %>
+            <%= link_to page, users_path(page: page, search: params[:search]), class: "btn btn-default btn-sm" %>
+          <% end %>
+        <% end %>
+      <% end %>
+
+      <% if @users.current_page < @users.total_pages %>
+        <%= link_to "次", users_path(page: @users.next_page, search: params[:search]), class: "btn btn-default btn-sm" %>
+        <%= link_to "最後", users_path(page: @users.total_pages, search: params[:search]), class: "btn btn-default btn-sm" %>
+      <% end %>
+    </div>
+  </div>
+
+  <table class="table table-condensed table-hover" id="table-users">
+    <thead>
+      <tr>
+        <th>名前</th>
+        <th>メールアドレス</th>
+        <th>部署</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @users.each do |user| %>
+        <tr>
+          <td><%= link_to user.name, user_path(user) %></td>
+          <td><%= user.email %></td>
+          <td><%= user.department %></td>
+          <td>
+            <%= link_to "編集", edit_user_path(user), class: "btn btn-primary btn-sm" %>
+            <%= link_to "削除", user_path(user), method: :delete,
+                        data: { confirm: "削除してよろしいですか？" },
+                        class: "btn btn-danger btn-sm" %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>

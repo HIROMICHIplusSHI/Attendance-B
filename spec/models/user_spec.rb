@@ -11,19 +11,19 @@ RSpec.describe User, type: :model do
     it '名前が必須であること' do
       user.name = ""
       expect(user).not_to be_valid
-      expect(user.errors[:name]).to include("can't be blank")
+      expect(user.errors[:name]).to include("を入力してください")
     end
 
     it 'メールアドレスが必須であること' do
       user.email = ""
       expect(user).not_to be_valid
-      expect(user.errors[:email]).to include("can't be blank")
+      expect(user.errors[:email]).to include("を入力してください")
     end
 
     it 'パスワードが必須であること' do
       user = User.new(name: "テスト太郎", email: "test@example.com", password: "")
       expect(user).not_to be_valid
-      expect(user.errors[:password]).to include("can't be blank")
+      expect(user.errors[:password]).to include("を入力してください")
     end
   end
 
@@ -33,7 +33,7 @@ RSpec.describe User, type: :model do
       user = User.new(name: "後輩", email: "test@example.com", password: "password")
 
       expect(user).not_to be_valid
-      expect(user.errors[:email]).to include("has already been taken")
+      expect(user.errors[:email]).to include("はすでに存在します")
     end
   end
 end
