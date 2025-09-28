@@ -6,7 +6,7 @@ class UsersController < ApplicationController
   before_action :set_one_month, only: [:show]
 
   def index
-    @users = User.all
+    @users = User.page(params[:page]).per(20).order(:name)
   end
 
   def new
