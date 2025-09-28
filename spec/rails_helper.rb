@@ -22,6 +22,12 @@ RSpec.configure do |config|
   config.infer_spec_type_from_file_location!
   config.filter_rails_from_backtrace!
 
+  # 各テスト前にデータベースをクリーンアップ
+  config.before(:each) do
+    User.delete_all
+    Attendance.delete_all
+  end
+
   # システムテスト用のドライバー設定
   config.before(:each, type: :system) do
     driven_by :rack_test
