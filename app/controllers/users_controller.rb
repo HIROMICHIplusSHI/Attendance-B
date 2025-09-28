@@ -59,11 +59,12 @@ class UsersController < ApplicationController
   end
 
   def update_basic_info
-    if @user.update(basic_info_params)
-      flash[:success] = '基本情報を更新しました。'
-      redirect_to @user
-    else
-      render 'edit_basic_info'
+    respond_to do |format|
+      if @user.update(basic_info_params)
+        handle_successful_update(format)
+      else
+        handle_failed_update(format)
+      end
     end
   end
 
@@ -115,5 +116,24 @@ class UsersController < ApplicationController
 
     flash[:danger] = "アクセス権限がありません。"
     redirect_to(root_path)
+  end
+
+  def handle_successful_update(format)
+    flash[:success] = '基本情報を更新しました。'
+    format.html { redirect_to @user }
+    format.json { render json: successful_update_json }
+  end
+
+  def handle_failed_update(format)
+    format.html { render 'edit_basic_info', layout: request.xhr? ? false : 'application' }
+    format.json { render json: { status: 'error', errors: @user.errors } }
+  end
+
+  def successful_update_json
+    {
+      status: 'success',
+      message: '基本情報を更新しました。',
+      redirect_url: user_path(@user)
+    }
   end
 end
