@@ -29,8 +29,8 @@ ActiveRecord::Schema[7.1].define(version: 2025_09_27_224838) do
     t.string "password_digest", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.datetime "basic_time", default: "2025-09-27 08:00:00"
-    t.datetime "work_time", default: "2025-09-27 07:30:00"
+    t.datetime "basic_time", default: "2025-09-27 23:00:00"
+    t.datetime "work_time", default: "2025-09-27 22:30:00"
     t.index ["email"], name: "index_users_on_email", unique: true
   end
 
