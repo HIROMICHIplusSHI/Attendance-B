@@ -26,3 +26,6 @@ bundle exec rails assets:clean
 
 # Run database migrations
 bundle exec rails db:migrate
+
+# Run database seeds (create admin user)
+bundle exec rails db:seed
