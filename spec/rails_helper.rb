@@ -24,8 +24,8 @@ RSpec.configure do |config|
 
   # 各テスト前にデータベースをクリーンアップ
   config.before(:each) do
-    User.delete_all
     Attendance.delete_all
+    User.delete_all
   end
 
   # システムテスト用のドライバー設定
