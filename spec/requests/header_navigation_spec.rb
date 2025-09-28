@@ -23,8 +23,10 @@ RSpec.describe "HeaderNavigation", type: :request do
 
     it "ログインリンクが表示される" do
       get root_path
-      expect(response.body).to include('ログイン')
-      expect(response.body).to include('href="/login"')
+      # ヘッダー部分のナビゲーションにログインリンクが含まれていることを確認
+      nav_section = response.body.match(%r{<nav>.*?</nav>}m)&.to_s || ""
+      expect(nav_section).to include('ログイン')
+      expect(nav_section).to include('href="/login"')
     end
 
     it "ドロップダウンメニューが表示されない" do
@@ -35,7 +37,9 @@ RSpec.describe "HeaderNavigation", type: :request do
 
   describe "ログイン時のヘッダー" do
     before do
+      # セッションに直接ユーザーIDを設定してログイン状態をシミュレート
       post login_path, params: { session: { email: user.email, password: "password123" } }
+      follow_redirect! if response.redirect?
     end
 
     it "ユーザー名がナビゲーションに表示される" do
@@ -72,7 +76,10 @@ RSpec.describe "HeaderNavigation", type: :request do
 
     it "ログインリンクが表示されない" do
       get root_path
-      expect(response.body).not_to include('href="/login"')
+      # ヘッダー部分のナビゲーションにログインリンクが含まれていないことを確認
+      # topページのメインコンテンツのログインボタンは除外する
+      nav_section = response.body.match(%r{<nav>.*?</nav>}m)&.to_s || ""
+      expect(nav_section).not_to include('href="/login"')
     end
   end
 
@@ -81,6 +88,7 @@ RSpec.describe "HeaderNavigation", type: :request do
 
     before do
       post login_path, params: { session: { email: admin_user.email, password: "password123" } }
+      follow_redirect! if response.redirect?
     end
 
     it "管理者メニューが表示される" do
@@ -105,6 +113,7 @@ RSpec.describe "HeaderNavigation", type: :request do
   describe "一般ユーザーログイン時のヘッダー" do
     before do
       post login_path, params: { session: { email: user.email, password: "password123" } }
+      follow_redirect! if response.redirect?
     end
 
     it "管理者メニューが表示されない" do
@@ -118,6 +127,7 @@ RSpec.describe "HeaderNavigation", type: :request do
   describe "JavaScript機能" do
     it "ドロップダウントグル用のクラスが含まれる" do
       post login_path, params: { session: { email: user.email, password: "password123" } }
+      follow_redirect! if response.redirect?
       get root_path
       expect(response.body).to include('dropdown-toggle')
       expect(response.body).to include('dropdown-menu')
