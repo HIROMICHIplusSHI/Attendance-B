@@ -27,12 +27,14 @@ RSpec.describe "Users", type: :request do
       end
 
       it "ユーザー一覧が表示される" do
+        general_user # ensure general_user is created
         get users_path
         expect(response.body).to include(admin_user.name)
         expect(response.body).to include(general_user.name)
       end
 
       it "部署情報が表示される" do
+        general_user # ensure general_user is created
         get users_path
         expect(response.body).to include(admin_user.department)
         expect(response.body).to include(general_user.department)
@@ -50,7 +52,7 @@ RSpec.describe "Users", type: :request do
               name: "ユーザー#{i + 1}",
               email: "user#{i + 1}@example.com",
               password: "password123",
-              department: "部署#{i % 3 + 1}"
+              department: "部署#{(i % 3) + 1}"
             )
           end
         end
