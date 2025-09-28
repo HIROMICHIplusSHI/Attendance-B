@@ -41,6 +41,7 @@ RSpec.describe "Users", type: :request do
       end
 
       it "削除リンクが表示される" do
+        general_user # ensure general_user is created
         get users_path
         expect(response.body).to include("削除")
       end
