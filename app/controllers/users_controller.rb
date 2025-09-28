@@ -6,7 +6,12 @@ class UsersController < ApplicationController
   before_action :set_one_month, only: [:show]
 
   def index
-    @users = User.page(params[:page]).per(20).order(:name)
+    @users = User.all
+
+    # 検索機能
+    @users = @users.where("name LIKE ?", "%#{params[:search]}%") if params[:search].present?
+
+    @users = @users.page(params[:page]).per(20).order(:name)
   end
 
   def new

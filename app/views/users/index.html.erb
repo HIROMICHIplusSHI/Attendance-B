@@ -1,13 +1,33 @@
 <% provide(:title, 'ユーザー一覧') %>
-<h1>ユーザー一覧</h1>
+<!-- ユーザー一覧タイトル（ページ上部センタ配置） -->
+<div class="row">
+  <div class="col-md-12 text-center">
+    <h1>ユーザー一覧</h1>
+  </div>
+</div>
+
+<!-- 検索フォーム（ページ右側配置） -->
+<div class="row">
+  <div class="col-md-12 text-right">
+    <%= form_with url: users_path, method: :get, local: true, class: "form-inline" do |f| %>
+      <div class="form-group">
+        <%= f.text_field :search, value: params[:search], placeholder: "ユーザー名で検索", class: "form-control input-sm", style: "width: 180px;" %>
+      </div>
+      <%= f.submit "検索", class: "btn btn-primary btn-sm" %>
+      <% if params[:search].present? %>
+        <%= link_to "リセット", users_path, class: "btn btn-default btn-sm" %>
+      <% end %>
+    <% end %>
+  </div>
+</div>
 
 <div class="col-md-10 col-md-offset-1">
   <!-- ページネーション（上部左・ボタン化） -->
   <div class="pagination-wrapper" style="margin-bottom: 20px;">
     <div class="btn-group" role="group" aria-label="ページナビゲーション">
       <% if @users.current_page > 1 %>
-        <%= link_to "最初", users_path, class: "btn btn-default btn-sm" %>
-        <%= link_to "前", users_path(page: @users.prev_page), class: "btn btn-default btn-sm" %>
+        <%= link_to "最初", users_path(search: params[:search]), class: "btn btn-default btn-sm" %>
+        <%= link_to "前", users_path(page: @users.prev_page, search: params[:search]), class: "btn btn-default btn-sm" %>
       <% end %>
 
       <% (@users.current_page - 2..@users.current_page + 2).each do |page| %>
@@ -15,14 +35,14 @@
           <% if page == @users.current_page %>
             <span class="btn btn-primary btn-sm active"><%= page %></span>
           <% else %>
-            <%= link_to page, users_path(page: page), class: "btn btn-default btn-sm" %>
+            <%= link_to page, users_path(page: page, search: params[:search]), class: "btn btn-default btn-sm" %>
           <% end %>
         <% end %>
       <% end %>
 
       <% if @users.current_page < @users.total_pages %>
-        <%= link_to "次", users_path(page: @users.next_page), class: "btn btn-default btn-sm" %>
-        <%= link_to "最後", users_path(page: @users.total_pages), class: "btn btn-default btn-sm" %>
+        <%= link_to "次", users_path(page: @users.next_page, search: params[:search]), class: "btn btn-default btn-sm" %>
+        <%= link_to "最後", users_path(page: @users.total_pages, search: params[:search]), class: "btn btn-default btn-sm" %>
       <% end %>
     </div>
   </div>
