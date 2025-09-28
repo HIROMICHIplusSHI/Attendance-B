@@ -1,22 +1,30 @@
-<% provide(:title, "アカウント作成") %>
-<h1>アカウント作成</h1>
+<% provide(:title, "新規登録") %>
+<h1>新規登録</h1>
 <div class="row">
   <div class="col-md-6 col-md-offset-3">
     <%= form_with(model: @user, local: true) do |f| %>
 
-      <%= f.label :name, "名前", class: "label-signup" %>
-      <%= f.text_field :name, class: "form-control" %>
+      <div class="form-group">
+        <%= f.label :name, "名前", class: "label-signup" %>
+        <%= f.text_field :name, class: "form-control" %>
+      </div>
 
-      <%= f.label :email, "メールアドレス", class: "label-signup" %>
-      <%= f.email_field :email, class: "form-control" %>
+      <div class="form-group">
+        <%= f.label :email, "メールアドレス", class: "label-signup" %>
+        <%= f.email_field :email, class: "form-control" %>
+      </div>
 
-      <%= f.label :password, "パスワード", class: "label-signup" %>
-      <%= f.password_field :password, class: "form-control" %>
+      <div class="form-group">
+        <%= f.label :password, "パスワード", class: "label-signup" %>
+        <%= f.password_field :password, class: "form-control" %>
+      </div>
 
-      <%= f.label :password_confirmation, "パスワード確認", class: "label-signup" %>
-      <%= f.password_field :password_confirmation, class: "form-control" %>
+      <div class="form-group">
+        <%= f.label :password_confirmation, "パスワード確認", class: "label-signup" %>
+        <%= f.password_field :password_confirmation, class: "form-control" %>
+      </div>
 
-      <%= f.submit "アカウント作成", class: "btn btn-primary btn-block btn-signup" %>
+      <%= f.submit "登録", class: "btn btn-primary btn-block btn-signup" %>
     <% end %>
   </div>
 </div>
