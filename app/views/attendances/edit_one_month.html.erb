@@ -1,11 +1,248 @@
 <% provide(:title, "1ヶ月の勤怠編集") %>
-<h1>1ヶ月の勤怠編集</h1>
 
 <div class="row">
-  <div class="col-md-8 col-md-offset-2">
-    <p>1ヶ月の勤怠編集機能は現在開発中です。</p>
-    <p>feature/15で完全実装予定です。</p>
-
-    <%= link_to "戻る", user_path(@user), class: "btn btn-default" %>
+  <div class="col-md-12 text-center">
+    <h1>1ヶ月の勤怠編集</h1>
   </div>
 </div>
+
+<!-- 月ナビゲーション -->
+<div class="row">
+  <div class="col-md-12 text-center" style="margin-bottom: 20px;">
+    <%= link_to "⇦", edit_one_month_user_attendances_path(@user, date: @first_day.prev_month),
+        class: "btn btn-info btn-sm", style: "margin-right: 10px;" %>
+    <%= @first_day.present? ? l(@first_day, format: :middle) : "日付取得エラー" %>の勤怠編集
+    <%= link_to "⇨", edit_one_month_user_attendances_path(@user, date: @first_day.next_month),
+        class: "btn btn-info btn-sm", style: "margin-left: 10px;" %>
+  </div>
+</div>
+
+<!-- ユーザー情報 -->
+<div class="row">
+  <div class="col-md-12">
+    <table class="table table-bordered table-condensed user-table">
+      <tr>
+        <td>名前：<%= @user.name %></td>
+        <td>所属：<%= @user.department.present? ? @user.department : "未設定" %></td>
+        <td>基本時間：<%= format_basic_info(@user.basic_time) %></td>
+        <td>指定勤務時間：<%= format_basic_info(@user.work_time) %></td>
+      </tr>
+    </table>
+  </div>
+</div>
+
+<!-- 1ヶ月勤怠一括編集フォーム -->
+<%= form_with url: update_one_month_user_attendances_path(@user), method: :patch, local: true do |form| %>
+  <div class="table-responsive">
+    <table class="table table-bordered table-condensed table-hover text-center" id="table-attendances-edit">
+      <thead>
+        <tr>
+          <th class="text-center">日付</th>
+          <th class="text-center">曜日</th>
+          <th class="text-center">出勤時間</th>
+          <th class="text-center">退勤時間</th>
+          <th class="text-center">在社時間</th>
+          <th class="text-center">備考</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @attendances.each do |day| %>
+          <tr>
+            <td class="text-center">
+              <%= l(day.worked_on, format: :short) %>
+            </td>
+            <td class="text-center
+              <%= 'text-primary' if day.worked_on.wday == 6 %>
+              <%= 'text-danger' if day.worked_on.wday == 0 %>">
+              <%= ApplicationController::DAYS_OF_THE_WEEK[day.worked_on.wday] %>
+            </td>
+            <td class="text-center">
+              <%= time_field_tag "attendances[#{day.id}][started_at]",
+                  day.started_at&.strftime("%H:%M"),
+                  class: "form-control input-sm text-center",
+                  style: "width: 100px; margin: 0 auto;" %>
+            </td>
+            <td class="text-center">
+              <%= time_field_tag "attendances[#{day.id}][finished_at]",
+                  day.finished_at&.strftime("%H:%M"),
+                  class: "form-control input-sm text-center",
+                  style: "width: 100px; margin: 0 auto;" %>
+            </td>
+            <td class="text-center">
+              <% if day.started_at.present? && day.finished_at.present? %>
+                <%= working_times(day.started_at, day.finished_at) %>
+              <% else %>
+                <span class="text-muted">--:--</span>
+              <% end %>
+            </td>
+            <td class="text-center">
+              <%= text_field_tag "attendances[#{day.id}][note]",
+                  day.note,
+                  class: "form-control input-sm",
+                  style: "width: 150px; margin: 0 auto;",
+                  placeholder: "備考" %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+      <!-- 統計フッター -->
+      <tfoot>
+        <tr>
+          <td colspan="2" class="text-center">累計日数</td>
+          <td colspan="2" class="text-center">総合勤務時間</td>
+          <td colspan="2" class="text-center">累計在社時間</td>
+        </tr>
+        <tr>
+          <td colspan="2" class="text-center"><%= @attendances.count %></td>
+          <td colspan="2" class="text-center">
+            <%= format_basic_info(@user.work_time).to_f * @worked_sum %>
+          </td>
+          <td colspan="2" class="text-center">
+            <% total_working_times = 0.0 %>
+            <% @attendances.each do |day| %>
+              <% if day.started_at.present? && day.finished_at.present? %>
+                <% total_working_times += working_times(day.started_at, day.finished_at).to_f %>
+              <% end %>
+            <% end %>
+            <%= format("%.2f", total_working_times) %>
+          </td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+
+  <!-- ボタン群 -->
+  <div class="text-center" style="margin: 30px 0;">
+    <%= form.submit "更新", class: "btn btn-primary btn-lg",
+        style: "margin-right: 20px; padding: 10px 30px;",
+        onclick: "return confirm('勤怠情報を更新してもよろしいですか？')" %>
+    <%= link_to "戻る", user_path(@user), class: "btn btn-default btn-lg",
+        style: "padding: 10px 30px;" %>
+  </div>
+<% end %>
+
+<!-- JavaScript for better UX -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // 時間入力フィールドにフォーカス時のハイライト
+  const timeInputs = document.querySelectorAll('input[type="time"]');
+  timeInputs.forEach(function(input) {
+    input.addEventListener('focus', function() {
+      this.style.backgroundColor = '#fff3cd';
+    });
+
+    input.addEventListener('blur', function() {
+      this.style.backgroundColor = '';
+    });
+  });
+
+  // 備考欄のフォーカス時のハイライト
+  const noteInputs = document.querySelectorAll('input[type="text"]');
+  noteInputs.forEach(function(input) {
+    input.addEventListener('focus', function() {
+      this.style.backgroundColor = '#d1ecf1';
+    });
+
+    input.addEventListener('blur', function() {
+      this.style.backgroundColor = '';
+    });
+  });
+
+  // 在社時間の自動計算
+  function calculateWorkingTime(startTime, endTime) {
+    if (!startTime || !endTime) return '--:--';
+
+    const start = new Date('1970-01-01T' + startTime + ':00');
+    const end = new Date('1970-01-01T' + endTime + ':00');
+
+    if (end <= start) return '--:--';
+
+    const diff = end - start;
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+
+    return hours.toString().padStart(2, '0') + ':' + minutes.toString().padStart(2, '0');
+  }
+
+  function updateWorkingTime(row) {
+    const startTimeInput = row.querySelector('input[id*="started_at"]');
+    const endTimeInput = row.querySelector('input[id*="finished_at"]');
+    const workingTimeCell = row.querySelector('td:nth-child(5)');
+
+    if (startTimeInput && endTimeInput && workingTimeCell) {
+      const workingTime = calculateWorkingTime(startTimeInput.value, endTimeInput.value);
+      workingTimeCell.textContent = workingTime;
+    }
+  }
+
+  // 各行の時間入力フィールドにイベントリスナーを追加
+  timeInputs.forEach(function(input) {
+    input.addEventListener('input', function() {
+      const row = this.closest('tr');
+      updateWorkingTime(row);
+    });
+
+    input.addEventListener('change', function() {
+      const row = this.closest('tr');
+      updateWorkingTime(row);
+    });
+  });
+});
+</script>
+
+<style>
+/* 1ヶ月勤怠編集ページ専用スタイル */
+.user-table td {
+  font-weight: bold;
+  padding: 8px 15px;
+}
+
+#table-attendances-edit {
+  font-size: 13px;
+}
+
+#table-attendances-edit th,
+#table-attendances-edit td {
+  vertical-align: middle;
+  padding: 8px 4px;
+}
+
+/* 土曜日のスタイル */
+#table-attendances-edit tr:has(.text-primary) {
+  background-color: #f0f8ff;
+}
+
+/* 日曜日のスタイル */
+#table-attendances-edit tr:has(.text-danger) {
+  background-color: #fff5f5;
+}
+
+/* フォーム要素のホバー効果 */
+.form-control:hover {
+  box-shadow: 0 0 5px rgba(0,123,255,.25);
+  border-color: #80bdff;
+}
+
+/* 統計行のスタイル */
+tfoot tr {
+  background-color: #f8f9fa;
+  font-weight: bold;
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 768px) {
+  .form-control {
+    width: 80px !important;
+    font-size: 12px;
+  }
+
+  #table-attendances-edit {
+    font-size: 11px;
+  }
+
+  .btn-lg {
+    padding: 8px 20px !important;
+    font-size: 14px;
+  }
+}
+</style>
