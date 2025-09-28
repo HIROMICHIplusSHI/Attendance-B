@@ -1,21 +1,26 @@
 <% provide(:title, "基本情報編集") %>
-<h1>基本情報編集</h1>
 
-<div class="row">
-  <div class="col-md-6 col-md-offset-3">
-    <%= form_with(model: @user, url: update_basic_info_user_path(@user), local: true) do |f| %>
-      <%= render 'shared/error_messages', object: @user %>
+<div class="modal-header">
+  <h4 class="modal-title">基本情報編集</h4>
+  <button type="button" class="close" onclick="closeModal()">&times;</button>
+</div>
 
-      <%= f.label :department, class: "label-basic-info" %>
-      <%= f.text_field :department, class: "form-control" %>
+<div class="modal-body">
+  <%= form_with(model: @user, url: update_basic_info_user_path(@user), local: true, remote: true) do |f| %>
+    <%= render 'shared/error_messages', object: @user %>
 
-      <%= f.label :basic_time, "基本時間", class: "label-basic-info" %>
-      <%= f.time_field :basic_time, class: "form-control" %>
+    <%= f.label :department, class: "label-basic-info" %>
+    <%= f.text_field :department, class: "form-control" %>
 
-      <%= f.label :work_time, "指定勤務時間", class: "label-basic-info" %>
-      <%= f.time_field :work_time, class: "form-control" %>
+    <%= f.label :basic_time, "基本時間", class: "label-basic-info" %>
+    <%= f.time_field :basic_time, class: "form-control" %>
 
-      <%= f.submit "更新", class: "btn btn-primary btn-basic-info" %>
-    <% end %>
-  </div>
+    <%= f.label :work_time, "指定勤務時間", class: "label-basic-info" %>
+    <%= f.time_field :work_time, class: "form-control" %>
+
+    <div class="modal-footer">
+      <%= f.submit "更新", class: "btn btn-primary" %>
+      <button type="button" class="btn btn-default" onclick="closeModal()">キャンセル</button>
+    </div>
+  <% end %>
 </div>
