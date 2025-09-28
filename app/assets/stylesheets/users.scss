@@ -84,3 +84,47 @@
     text-align: center;
   }
 }
+
+/* 削除確認モーダルのスタイル */
+#deleteModal {
+  display: none; // 初期状態は非表示
+
+  .user-info {
+    background-color: #f9f9f9;
+    padding: 15px;
+    border-radius: 4px;
+    margin-top: 10px;
+
+    p {
+      margin: 5px 0;
+    }
+  }
+
+  .alert-danger {
+    margin-bottom: 15px;
+  }
+}
+
+/* モーダル背景オーバーレイ */
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 1040;
+  background-color: #000;
+
+  &.fade {
+    opacity: 0;
+  }
+
+  &.show {
+    opacity: 0.5;
+  }
+}
+
+/* モーダル表示時のbodyスクロール制御 */
+body.modal-open {
+  overflow: hidden;
+}
