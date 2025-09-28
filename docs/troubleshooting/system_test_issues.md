@@ -1139,6 +1139,354 @@ docker-compose up -d
 
 この問題解決を通じて、**Docker + Rails環境での gem依存関係管理の重要性** と **計画的な環境管理の必要性** が実体験として理解できました。
 
+## 12. 管理者機能とTurbo統合の問題 (feature/18-admin-header-menu)
+
+### 背景と開発目標
+管理者専用のヘッダーメニュー実装、ユーザー削除機能、Turbo統合によるモダンなUX実現を目指した包括的な機能拡張プロジェクト。
+
+### 発生した主要問題
+
+#### 1. 管理者権限の認可問題
+
+**症状:**
+```
+管理者ユーザーでも他のユーザーの編集ページにアクセスできない
+「アクセス権限がありません」エラーが表示される
+```
+
+**原因:**
+- `before_action`フィルターで`correct_user`チェックが適用されていた
+- 管理者でも本人以外のユーザー編集が拒否される設計
+- `admin_or_correct_user_check`メソッドが適用されていない
+
+**解決策:**
+```ruby
+# app/controllers/users_controller.rb
+# 修正前
+before_action :correct_user, only: %i[edit update]
+
+# 修正後
+before_action :admin_or_correct_user_check, only: %i[edit update]
+
+private
+
+def admin_or_correct_user_check
+  return if current_user&.admin?
+
+  @user = User.find(params[:id])
+  return if current_user?(@user)
+
+  flash[:danger] = "アクセス権限がありません。"
+  redirect_to(root_path)
+end
+```
+
+**学習ポイント:**
+- 管理者権限設計の重要性
+- before_actionフィルターの適切な選択
+- 権限チェックロジックの階層設計
+
+#### 2. ユーザー削除機能でのTurbo対応問題
+
+**症状:**
+```
+削除ボタンをクリックしても削除されない
+ユーザー詳細ページにリダイレクトされる
+削除確認ダイアログが表示されない
+```
+
+**原因:**
+- Rails 7のTurbo対応が不完全
+- `method: :delete`の従来記法が動作しない
+- Turbo未読み込みによるJavaScript機能停止
+
+**解決策:**
+```erb
+<!-- app/views/users/index.html.erb -->
+<!-- 修正前 -->
+<%= link_to "削除", user, method: :delete,
+    confirm: "削除してよろしいですか？" %>
+
+<!-- 修正後 -->
+<%= link_to "削除", user,
+    data: {
+      turbo_method: :delete,
+      turbo_confirm: "#{user.name}（#{user.email}）を削除してよろしいですか？"
+    },
+    class: "btn btn-danger btn-sm" %>
+```
+
+#### 3. Turbo未読み込み問題
+
+**症状:**
+```
+ブラウザコンソール: ReferenceError: Turbo is not defined
+JavaScript機能が全て停止
+ドロップダウンメニューが動作しない
+```
+
+**原因:**
+- importmap.rbの設定不備
+- SprocketsとImportmapの競合
+- アセットパイプライン設定ミス
+
+**解決段階的アプローチ:**
+
+**ステップ1: importmap.rb設定**
+```ruby
+# config/importmap.rb
+pin "application", preload: true
+pin "@hotwired/turbo-rails", to: "turbo.min.js", preload: true
+```
+
+**ステップ2: application.js更新**
+```javascript
+// app/javascript/application.js
+import { Turbo } from "@hotwired/turbo-rails"
+window.Turbo = Turbo;
+```
+
+**ステップ3: アセット競合解決**
+```javascript
+// 古いファイルをリネーム
+// app/assets/javascripts/application.js → application_old.js
+
+// app/assets/config/manifest.js更新
+//= link_tree ../images
+//= link_directory ../stylesheets .css
+//= link application.js
+//= link_tree ../../javascript .js
+```
+
+#### 4. JavaScript機能のTurbo対応不備
+
+**症状:**
+```
+ページ遷移後にドロップダウンメニューが動作しない
+基本情報編集モーダルが開かない
+イベントリスナーが重複登録される
+```
+
+**原因:**
+- `DOMContentLoaded`イベントがTurboページ遷移で発火しない
+- イベントリスナーの重複登録
+- Turbo対応のライフサイクル理解不足
+
+**解決策:**
+```javascript
+// app/javascript/application.js
+// Turbo対応のイベント初期化
+document.addEventListener('turbo:load', function() {
+  initializeDropdowns();
+});
+
+// 初回読み込み対応（Turbo無効時の備え）
+document.addEventListener('DOMContentLoaded', function() {
+  initializeDropdowns();
+});
+
+function initializeDropdowns() {
+  const dropdownToggles = document.querySelectorAll('.dropdown-toggle');
+
+  dropdownToggles.forEach(function(toggle) {
+    // 既存のリスナーを削除してから新しいリスナーを追加
+    toggle.removeEventListener('click', handleDropdownClick);
+    toggle.addEventListener('click', handleDropdownClick);
+  });
+}
+```
+
+#### 5. 基本情報モーダルのフラッシュメッセージ問題
+
+**症状:**
+```
+基本情報更新後にフラッシュメッセージが表示されない
+AJAX更新が完了してもユーザーに結果が伝わらない
+```
+
+**原因:**
+- AJAXレスポンスでのフラッシュメッセージ処理未実装
+- JSONレスポンス形式の不統一
+- JavaScript側でのフラッシュ表示機能不足
+
+**解決策:**
+
+**コントローラー側JSON対応:**
+```ruby
+# app/controllers/users_controller.rb
+def handle_successful_update(format)
+  flash[:success] = '基本情報を更新しました。'
+  format.html { redirect_to @user }
+  format.json { render json: successful_update_json }
+end
+
+def handle_failed_update(format)
+  format.html { render 'edit_basic_info', layout: request.xhr? ? false : 'application' }
+  format.json { render json: { status: 'error', errors: @user.errors } }
+end
+
+def successful_update_json
+  {
+    status: 'success',
+    message: '基本情報を更新しました。',
+    redirect_url: user_path(@user)
+  }
+end
+```
+
+**JavaScript側フラッシュ表示:**
+```javascript
+// app/views/users/show.html.erb内のJavaScript
+function showFlashMessage(type, message) {
+  const existingFlash = document.querySelector('.alert');
+  if (existingFlash) {
+    existingFlash.remove();
+  }
+
+  const flashDiv = document.createElement('div');
+  flashDiv.className = `alert alert-${type === 'success' ? 'info' : type}`;
+  flashDiv.textContent = message;
+  flashDiv.style.marginBottom = '20px';
+
+  const flashContainer = document.getElementById('flash');
+  if (flashContainer) {
+    flashContainer.appendChild(flashDiv);
+
+    setTimeout(() => {
+      if (flashDiv.parentNode) {
+        flashDiv.remove();
+      }
+    }, 5000);
+  }
+}
+```
+
+#### 6. テストでのエラーハンドリング問題
+
+**症状:**
+```ruby
+# RSpecテスト失敗
+expect(response.body).to include('基本情報編集')
+# => 空のレスポンスボディが返される
+```
+
+**原因:**
+- XHR/非XHRリクエストでのレンダリング処理が不統一
+- テスト環境での条件分岐ロジック不備
+
+**解決策:**
+```ruby
+def handle_failed_update(format)
+  # XHRとそうでないリクエスト両方に対応
+  format.html { render 'edit_basic_info', layout: request.xhr? ? false : 'application' }
+  format.json { render json: { status: 'error', errors: @user.errors } }
+end
+```
+
+### Rubocopコード品質対応
+
+#### AbcSize複雑度問題の解決
+
+**症状:**
+```
+Assignment Branch Condition size for update_basic_info is too high. [21.56/17]
+```
+
+**解決策: メソッド分割リファクタリング**
+```ruby
+# リファクタリング前（複雑度高）
+def update_basic_info
+  respond_to do |format|
+    if @user.update(basic_info_params)
+      flash[:success] = '基本情報を更新しました。'
+      format.html { redirect_to @user }
+      format.json { render json: { status: 'success', message: '基本情報を更新しました。', redirect_url: user_path(@user) } }
+    else
+      format.html { render 'edit_basic_info', layout: false if request.xhr? }
+      format.json { render json: { status: 'error', errors: @user.errors } }
+    end
+  end
+end
+
+# リファクタリング後（複雑度分散）
+def update_basic_info
+  respond_to do |format|
+    if @user.update(basic_info_params)
+      handle_successful_update(format)
+    else
+      handle_failed_update(format)
+    end
+  end
+end
+
+private
+
+def handle_successful_update(format)
+  flash[:success] = '基本情報を更新しました。'
+  format.html { redirect_to @user }
+  format.json { render json: successful_update_json }
+end
+
+def handle_failed_update(format)
+  format.html { render 'edit_basic_info', layout: request.xhr? ? false : 'application' }
+  format.json { render json: { status: 'error', errors: @user.errors } }
+end
+
+def successful_update_json
+  {
+    status: 'success',
+    message: '基本情報を更新しました。',
+    redirect_url: user_path(@user)
+  }
+end
+```
+
+### 検証結果
+
+#### 機能テスト成功
+- **✅ 管理者権限**: 他ユーザー編集・削除可能
+- **✅ ユーザー削除**: Turbo対応削除機能動作
+- **✅ ドロップダウン**: Turbo遷移対応ナビゲーション
+- **✅ モーダル機能**: AJAX基本情報編集・フラッシュメッセージ
+- **✅ 権限制御**: 一般ユーザーの適切なアクセス制限
+
+#### 品質保証成功
+- **✅ RuboCop**: 全ファイル品質基準クリア
+- **✅ RSpec**: 全テストスイート成功
+- **✅ コード複雑度**: AbcSize問題解決
+
+### 学習ポイント
+
+#### Rails 7 + Turbo開発の重要原則
+1. **イベントライフサイクル**: `turbo:load`イベント活用
+2. **data属性**: `turbo_method`, `turbo_confirm`の正しい使用
+3. **AJAX/JSON**: 統一されたレスポンス形式設計
+4. **権限設計**: 管理者・一般ユーザーの明確な役割分離
+
+#### アセットパイプライン管理
+1. **ImportmapとSprockets**: 競合回避の設定管理
+2. **JavaScript統合**: Turbo + バニラJSの最適な組み合わせ
+3. **イベント管理**: 重複登録回避とメモリリーク防止
+
+#### テスト駆動開発
+1. **段階的実装**: 機能→統合→E2Eの順次検証
+2. **エラーハンドリング**: XHR/非XHR両対応のテスト設計
+3. **品質保証**: 継続的なRuboCop・RSpec実行
+
+### 今後の展開可能性
+
+#### フロントエンド現代化
+- **Stimulus導入**: より構造化されたJavaScript管理
+- **Turbo Frames**: 部分更新の最適化
+- **CSS-in-JS**: スタイル管理の現代化
+
+#### 管理機能拡張
+- **一括操作**: 複数ユーザー管理機能
+- **権限管理**: ロールベースアクセス制御
+- **監査ログ**: 管理者操作の記録・追跡
+
+この実装により、**Rails 7 + Turbo環境での本格的な管理者機能** と **現代的なUX設計** の基盤が確立されました。
+
 ## 関連リソース
 - [Rails Host Authorization](https://guides.rubyonrails.org/configuring.html#configuring-middleware)
 - [Capybara ドライバー選択](https://github.com/teamcapybara/capybara#selecting-the-driver)
