@@ -52,7 +52,11 @@ class UsersController < ApplicationController
     redirect_to users_path
   end
 
-  def edit_basic_info; end
+  def edit_basic_info
+    respond_to do |format|
+      format.html { render layout: false if request.xhr? }
+    end
+  end
 
   def update_basic_info
     if @user.update(basic_info_params)
