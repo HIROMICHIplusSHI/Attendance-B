@@ -1,9 +1,11 @@
 require 'rails_helper'
 
 RSpec.describe "UserPageRedesign", type: :request do
-  let(:user) { User.create!(name: "テストユーザー", email: "test-#{SecureRandom.hex(4)}@example.com", password: "password123",
-                           basic_time: Time.current.change(hour: 8, min: 0),
-                           work_time: Time.current.change(hour: 7, min: 30)) }
+  let(:user) do
+    User.create!(name: "テストユーザー", email: "test-#{SecureRandom.hex(4)}@example.com", password: "password123",
+                 basic_time: Time.current.change(hour: 8, min: 0),
+                 work_time: Time.current.change(hour: 7, min: 30))
+  end
 
   before do
     # ログイン処理
@@ -108,7 +110,7 @@ RSpec.describe "UserPageRedesign", type: :request do
       end
 
       it "統計値が計算されて表示されている" do
-        expect(response.body).to match(/\d+日?/)  # 出勤日数
+        expect(response.body).to match(/\d+日?/) # 出勤日数
         expect(response.body).to match(/\d+\.\d+/) # 勤務時間（小数点形式）
       end
     end
