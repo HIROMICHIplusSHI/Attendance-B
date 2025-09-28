@@ -1,10 +1,23 @@
 class AttendancesController < ApplicationController
+  include AttendanceManagement
+
   before_action :logged_in_user
   before_action :set_user
   before_action :set_attendance, only: [:update]
+  before_action :check_access_permission, only: %i[edit_one_month update_one_month]
 
   def edit_one_month
-    # 簡単な実装（feature/15で完全実装予定）
+    set_month_range
+    @attendances = fetch_monthly_attendances
+    create_missing_attendance_records
+    @worked_sum = @attendances.where.not(started_at: nil, finished_at: nil).count
+  end
+
+  def update_one_month
+    process_bulk_attendance_update
+    handle_update_success
+  rescue StandardError => e
+    handle_update_error(e)
   end
 
   def update
