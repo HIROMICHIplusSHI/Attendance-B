@@ -64,8 +64,8 @@
           <td><%= user.department %></td>
           <td>
             <%= link_to "編集", edit_user_path(user), class: "btn btn-primary btn-sm" %>
-            <%= link_to "削除", user_path(user), method: :delete,
-                        data: { confirm: "削除してよろしいですか？" },
+            <%= link_to "削除", user_path(user),
+                        data: { "turbo-method": :delete, confirm: "削除してよろしいですか？" },
                         class: "btn btn-danger btn-sm" %>
           </td>
         </tr>

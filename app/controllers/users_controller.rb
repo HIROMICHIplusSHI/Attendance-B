@@ -1,7 +1,7 @@
 class UsersController < ApplicationController
   before_action :logged_in_user, only: %i[index show edit update destroy edit_basic_info update_basic_info]
   before_action :admin_user, only: %i[index destroy edit_basic_info update_basic_info]
-  before_action :correct_user, only: %i[edit update]
+  before_action :admin_or_correct_user_check, only: %i[edit update]
   before_action :set_user, only: %i[show edit update destroy edit_basic_info update_basic_info]
   before_action :set_one_month, only: [:show]
 
@@ -105,5 +105,15 @@ class UsersController < ApplicationController
     missing_days = one_month - @attendances.pluck(:worked_on)
     missing_days.each { |day| @user.attendances.create!(worked_on: day) }
     @attendances = fetch_monthly_attendances
+  end
+
+  def admin_or_correct_user_check
+    return if current_user&.admin?
+
+    @user = User.find(params[:id])
+    return if current_user?(@user)
+
+    flash[:danger] = "アクセス権限がありません。"
+    redirect_to(root_path)
   end
 end
