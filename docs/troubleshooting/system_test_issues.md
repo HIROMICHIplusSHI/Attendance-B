@@ -941,6 +941,204 @@ docker-compose restart web
 
 この技術置換により、Rails 7 + 現代JavaScript環境での持続可能な開発基盤が確立されました。
 
+## 11. Docker環境と開発gem依存関係の問題 (feature/14)
+
+### 重要な問題の背景
+feature/14のユーザー検索機能実装中に、Docker環境の設定ミスにより重大な開発環境障害が発生しました。この問題は **gem依存関係管理の計画性の重要さ** を示す典型例です。
+
+### 根本的な問題: Production環境設定の誤用
+
+#### 発生したエラー
+```bash
+# gem不足エラー
+Could not find nokogiri-1.18.10-aarch64-linux-gnu, ffi-1.17.2-aarch64-linux-gnu in locally installed gems
+
+# 開発ツール利用不可
+bundler: command not found: rubocop
+bundler: command not found: rspec
+
+# Bundle install 権限エラー
+There was an error while trying to write to `/usr/local/bundle/ruby/3.2.0/cache`
+```
+
+#### 根本原因
+**Dockerfileが本番環境用設定になっていた:**
+```dockerfile
+# 問題のあった設定
+ENV RAILS_ENV="production" \
+    BUNDLE_DEPLOYMENT="1" \
+    BUNDLE_PATH="/usr/local/bundle" \
+    BUNDLE_WITHOUT="development"  # ←これが致命的
+```
+
+### 問題の深刻度
+
+#### 影響範囲
+- **E2Eテスト実行不可**: Playwrightが動作しない
+- **品質チェック不可**: RuboCopが実行できない
+- **開発ツール全般**: 開発用gemが利用不可
+- **ブラウザアクセス不可**: そもそも開発環境として機能しない
+
+#### ユーザーからの警告
+```
+GEM追加や変更はかなり計画的にやらないと
+【足りないから足しました】では不整合がすぐ怒ります。
+注意してください。
+```
+
+この警告は、gem管理の計画性がいかに重要かを示しています。
+
+### 解決手順
+
+#### 1. Dockerfile修正
+```dockerfile
+# 修正前（本番環境用）
+ENV RAILS_ENV="production" \
+    BUNDLE_DEPLOYMENT="1" \
+    BUNDLE_PATH="/usr/local/bundle" \
+    BUNDLE_WITHOUT="development"
+
+# 修正後（開発環境用）
+ENV RAILS_ENV="development" \
+    BUNDLE_DEPLOYMENT="1" \
+    BUNDLE_PATH="/usr/local/bundle"
+    # BUNDLE_WITHOUT を削除して開発gemを利用可能に
+```
+
+#### 2. docker-compose.yml強化
+```yaml
+# 環境変数の明示的指定
+services:
+  web:
+    environment:
+      - DATABASE_URL=mysql2://root:password@db:3306/attendance_app_development
+    # Rails環境の強制的な開発設定
+    command: ["sh", "-c", "RAILS_ENV=development ./bin/rails server -b 0.0.0.0"]
+```
+
+#### 3. コンテナ再構築
+```bash
+# キャッシュクリアして完全再構築
+docker-compose down
+docker-compose build --no-cache
+docker-compose up -d
+```
+
+### 検証結果
+
+#### gem利用可能性確認
+```bash
+# RuboCop実行成功
+docker-compose exec web bundle exec rubocop
+# => 58 files inspected, no offenses detected
+
+# RSpec実行成功
+docker-compose exec web bundle exec rspec
+# => 25 examples, 0 failures
+
+# 開発環境gem確認
+docker-compose exec web bundle exec gem list | grep rubocop
+# => rubocop (1.x.x)
+```
+
+#### アプリケーション動作確認
+```bash
+# ブラウザアクセス成功
+curl http://localhost:3000
+# => 200 OK
+
+# 検索機能動作確認
+# 「田中」で検索 → 部分一致結果表示
+# ページネーション → 20件制限動作
+```
+
+### 学習ポイント
+
+#### Docker環境管理の基本原則
+1. **環境分離**: 開発・テスト・本番環境の明確な分離
+2. **設定検証**: ENV設定とrequirements.txtの整合性確認
+3. **依存関係**: BUNDLE_WITHOUT設定の影響範囲理解
+
+#### gem依存関係管理のベストプラクティス
+1. **計画的管理**: gem追加前に依存関係影響を分析
+2. **環境別管理**: development/test/productionグループの適切な分離
+3. **検証手順**: gem変更後の必須検証項目
+
+#### 危険な操作パターン
+```bash
+# ❌ 避けるべき操作
+gem add xxxxx                    # 影響分析なしのgem追加
+bundle install --without development  # 開発環境で開発gemを除外
+BUNDLE_WITHOUT="development"     # Dockerfileでの不適切な設定
+
+# ✅ 推奨する安全な手順
+1. Gemfile変更前に依存関係確認
+2. 環境別での動作テスト
+3. 段階的なgem追加・更新
+4. 必須機能の動作確認
+```
+
+### 今後の予防策
+
+#### Docker設定の最適化
+```dockerfile
+# 環境別Dockerfile使用を検討
+ARG RAILS_ENV=development
+ENV RAILS_ENV=$RAILS_ENV
+
+# 条件分岐による gem group制御
+RUN if [ "$RAILS_ENV" = "production" ]; then \
+      bundle install --without development test; \
+    else \
+      bundle install; \
+    fi
+```
+
+#### 開発チェックリスト
+- [ ] 新しいgem追加時の依存関係確認
+- [ ] Docker環境でのgem利用可能性テスト
+- [ ] 開発ツール（RuboCop, RSpec）動作確認
+- [ ] ブラウザアクセス確認
+- [ ] E2Eテスト実行可能性確認
+
+#### 緊急時の対応手順
+```bash
+# 1. 現状確認
+docker-compose exec web bundle exec gem list
+docker-compose exec web rails --version
+
+# 2. 環境設定確認
+docker-compose exec web printenv | grep RAILS_ENV
+docker-compose exec web printenv | grep BUNDLE
+
+# 3. 必要に応じて完全再構築
+docker-compose down
+docker system prune -f
+docker-compose build --no-cache
+docker-compose up -d
+```
+
+### この問題から得た教訓
+
+#### 技術的教訓
+- **環境設定の重要性**: 開発環境設定が全ての基盤
+- **Docker理解**: コンテナ環境での設定管理の複雑さ
+- **依存関係管理**: gem管理の慎重さが必要
+
+#### プロジェクト管理の教訓
+- **計画性**: 「足りないから足す」ではなく事前計画
+- **検証**: 変更後の必須動作確認
+- **影響範囲**: 小さな設定変更でも大きな影響
+
+### 成功指標
+- **✅ Docker環境正常化**: 開発・テスト・本番環境の適切な分離
+- **✅ gem依存関係解決**: 全開発ツールの利用可能性確保
+- **✅ 品質保証復旧**: RuboCop・RSpec実行環境復旧
+- **✅ E2E環境準備**: Playwright実行基盤確立
+- **✅ 検索機能完成**: TDD開発完了・25テスト成功
+
+この問題解決を通じて、**Docker + Rails環境での gem依存関係管理の重要性** と **計画的な環境管理の必要性** が実体験として理解できました。
+
 ## 関連リソース
 - [Rails Host Authorization](https://guides.rubyonrails.org/configuring.html#configuring-middleware)
 - [Capybara ドライバー選択](https://github.com/teamcapybara/capybara#selecting-the-driver)
