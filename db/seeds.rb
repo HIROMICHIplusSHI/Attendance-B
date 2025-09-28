@@ -24,8 +24,8 @@ puts "✅ テストユーザー作成: #{test_user.name} (#{test_user.email})"
 
 # 一般ユーザー（10人程度）
 10.times do |n|
-  user = User.find_or_create_by!(email: "user#{n+1}@example.com") do |u|
-    u.name = "社員#{n+1}"
+  User.find_or_create_by!(email: "user#{n + 1}@example.com") do |u|
+    u.name = "社員#{n + 1}"
     u.password = "password"
     u.password_confirmation = "password"
     u.basic_time = Time.zone.parse("08:00:00")
