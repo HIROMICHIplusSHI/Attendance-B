@@ -76,6 +76,45 @@ RSpec.describe "HeaderNavigation", type: :request do
     end
   end
 
+  describe "管理者ログイン時のヘッダー" do
+    let(:admin_user) { User.create!(name: "管理者", email: "admin@example.com", password: "password123", admin: true) }
+
+    before do
+      post login_path, params: { session: { email: admin_user.email, password: "password123" } }
+    end
+
+    it "管理者メニューが表示される" do
+      get root_path
+      expect(response.body).to include('管理者メニュー')
+      expect(response.body).to include('dropdown-header')
+    end
+
+    it "ユーザー一覧リンクが表示される" do
+      get root_path
+      expect(response.body).to include('ユーザー一覧')
+      expect(response.body).to include('href="/users"')
+    end
+
+    it "基本設定の修正リンクが表示される" do
+      get root_path
+      expect(response.body).to include('基本設定の修正')
+      expect(response.body).to include("href=\"/users/#{admin_user.id}/edit_basic_info\"")
+    end
+  end
+
+  describe "一般ユーザーログイン時のヘッダー" do
+    before do
+      post login_path, params: { session: { email: user.email, password: "password123" } }
+    end
+
+    it "管理者メニューが表示されない" do
+      get root_path
+      expect(response.body).not_to include('管理者メニュー')
+      expect(response.body).not_to include('ユーザー一覧')
+      expect(response.body).not_to include('基本設定の修正')
+    end
+  end
+
   describe "JavaScript機能" do
     it "ドロップダウントグル用のクラスが含まれる" do
       post login_path, params: { session: { email: user.email, password: "password123" } }

@@ -63,13 +63,19 @@
           <td><%= user.email %></td>
           <td><%= user.department %></td>
           <td>
-            <%= link_to "編集", edit_user_path(user), class: "btn btn-primary btn-sm" %>
-            <%= link_to "削除", user_path(user), method: :delete,
-                        data: { confirm: "削除してよろしいですか？" },
-                        class: "btn btn-danger btn-sm" %>
+            <% if current_user.admin? && !current_user?(user) %>
+              <%= link_to "編集", edit_user_path(user), class: "btn btn-primary btn-sm" %>
+              <%= link_to "削除", user,
+                  data: {
+                    turbo_method: :delete,
+                    turbo_confirm: "#{user.name}（#{user.email}）を削除してよろしいですか？"
+                  },
+                  class: "btn btn-danger btn-sm" %>
+            <% end %>
           </td>
         </tr>
       <% end %>
     </tbody>
   </table>
 </div>
+

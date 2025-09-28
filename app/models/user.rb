@@ -12,4 +12,8 @@ class User < ApplicationRecord
   validates :basic_time, :work_time, presence: true
 
   before_save { self.email = email.downcase }
+
+  def admin?
+    admin
+  end
 end

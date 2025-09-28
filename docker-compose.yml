@@ -11,7 +11,7 @@ services:
       - db
     environment:
       - DATABASE_URL=mysql2://root:password@db:3306/attendance_app_development
-    command: ["sh", "-c", "RAILS_ENV=development ./bin/rails server -b 0.0.0.0"]
+    command: ["sh", "-c", "rm -f tmp/pids/server.pid && RAILS_ENV=development ./bin/rails server -b 0.0.0.0"]
     stdin_open: true
     tty: true
 

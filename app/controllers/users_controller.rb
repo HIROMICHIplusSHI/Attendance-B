@@ -1,7 +1,7 @@
 class UsersController < ApplicationController
   before_action :logged_in_user, only: %i[index show edit update destroy edit_basic_info update_basic_info]
   before_action :admin_user, only: %i[index destroy edit_basic_info update_basic_info]
-  before_action :correct_user, only: %i[edit update]
+  before_action :admin_or_correct_user_check, only: %i[edit update]
   before_action :set_user, only: %i[show edit update destroy edit_basic_info update_basic_info]
   before_action :set_one_month, only: [:show]
 
@@ -59,11 +59,12 @@ class UsersController < ApplicationController
   end
 
   def update_basic_info
-    if @user.update(basic_info_params)
-      flash[:success] = '基本情報を更新しました。'
-      redirect_to @user
-    else
-      render 'edit_basic_info'
+    respond_to do |format|
+      if @user.update(basic_info_params)
+        handle_successful_update(format)
+      else
+        handle_failed_update(format)
+      end
     end
   end
 
@@ -74,11 +75,12 @@ class UsersController < ApplicationController
   end
 
   def set_one_month
-    set_month_range
-    @attendances = fetch_monthly_attendances
-    create_missing_attendance_records
-    @worked_sum = @attendances.where.not(started_at: nil, finished_at: nil).count
-    @total_working_times = 0.0
+    result = MonthlyAttendanceService.new(@user, params[:date]).call
+    @first_day = result[:first_day]
+    @last_day = result[:last_day]
+    @attendances = result[:attendances]
+    @worked_sum = result[:worked_sum]
+    @total_working_times = result[:total_working_times]
   end
 
   def user_params
@@ -89,21 +91,32 @@ class UsersController < ApplicationController
     params.require(:user).permit(:department, :basic_time, :work_time)
   end
 
-  def set_month_range
-    @first_day = params[:date]&.to_date || Date.current.beginning_of_month
-    @last_day = @first_day.end_of_month
+  def admin_or_correct_user_check
+    return if current_user&.admin?
+
+    @user = User.find(params[:id])
+    return if current_user?(@user)
+
+    flash[:danger] = "アクセス権限がありません。"
+    redirect_to(root_path)
   end
 
-  def fetch_monthly_attendances
-    @user.attendances.where(worked_on: @first_day..@last_day).order(:worked_on)
+  def handle_successful_update(format)
+    flash[:success] = '基本情報を更新しました。'
+    format.html { redirect_to @user }
+    format.json { render json: successful_update_json }
   end
 
-  def create_missing_attendance_records
-    one_month = [*@first_day..@last_day]
-    return if one_month.count == @attendances.count
+  def handle_failed_update(format)
+    format.html { render 'edit_basic_info', layout: request.xhr? ? false : 'application' }
+    format.json { render json: { status: 'error', errors: @user.errors } }
+  end
 
-    missing_days = one_month - @attendances.pluck(:worked_on)
-    missing_days.each { |day| @user.attendances.create!(worked_on: day) }
-    @attendances = fetch_monthly_attendances
+  def successful_update_json
+    {
+      status: 'success',
+      message: '基本情報を更新しました。',
+      redirect_url: user_path(@user)
+    }
   end
 end
