@@ -3,7 +3,11 @@
   <!-- クローン元完全再現：2行×4列ユーザー情報テーブル -->
   <table class="table table-bordered table-condensed user-table">
     <tr>
-      <td><%= @first_day.present? ? l(@first_day, format: :middle) : "日付取得エラー" %> 時間管理表</td>
+      <td>
+        <%= link_to "⇦", user_path(date: @first_day.prev_month), class: "btn btn-info btn-sm", style: "margin-right: 10px;" %>
+        <%= @first_day.present? ? l(@first_day, format: :middle) : "日付取得エラー" %> 時間管理表
+        <%= link_to "⇨", user_path(date: @first_day.next_month), class: "btn btn-info btn-sm", style: "margin-left: 10px;" %>
+      </td>
       <td>指定勤務時間：<%= format_basic_info(@user.work_time) %></td>
       <td>基本時間：<%= format_basic_info(@user.basic_time) %></td>
       <td>月初日：<%= @first_day.present? ? l(@first_day, format: :short) : "なし" %></td>
@@ -18,11 +22,9 @@
   </table>
 </div>
 
-<!-- クローン元完全再現：月次ナビゲーション（ユーザー情報テーブル下） -->
+<!-- 1ヶ月の勤怠編集ボタン（ユーザー情報テーブル下） -->
 <div class="btn-users-show">
-  <%= link_to "⇦ 前月へ", user_path(date: @first_day.prev_month), class: "btn btn-info" %>
   <%= link_to "1ヶ月の勤怠編集へ", edit_one_month_user_attendances_path(@user, date: @first_day), class: "btn btn-success", data: { turbo: false } %>
-  <%= link_to "次月へ ⇨", user_path(date: @first_day.next_month), class: "btn btn-info" %>
 </div>
 
 <div>
@@ -48,9 +50,11 @@
         <td class="text-center"><%= ApplicationController::DAYS_OF_THE_WEEK[day.worked_on.wday] %></td>
         <td class="text-center">
         <% if btn_text = attendance_state(day) %>
-          <%= link_to "#{btn_text}登録", user_attendance_path(@user, day),
-            data: { turbo_method: :patch },
-            class: "btn btn-primary btn-attendance" %>
+          <%= button_to "#{btn_text}登録", user_attendance_path(@user, day),
+            method: :patch,
+            params: { attendance: { "#{btn_text == '出勤' ? 'started_at' : 'finished_at'}" => Time.current.strftime("%H:%M") } },
+            class: "btn btn-primary btn-attendance",
+            form_class: "d-inline" %>
         <% end %>
         </td>
         <td class="text-center"><%= l(day.started_at, format: :time) if day.started_at.present? %></td>
