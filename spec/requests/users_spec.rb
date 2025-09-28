@@ -41,6 +41,7 @@ RSpec.describe "Users", type: :request do
       end
 
       it "削除リンクが表示される" do
+        general_user # ensure general_user is created
         get users_path
         expect(response.body).to include("削除")
       end
@@ -107,8 +108,14 @@ RSpec.describe "Users", type: :request do
       expect(response.body).to include('form')
       expect(response.body).to include('name="user[name]"')
       expect(response.body).to include('name="user[email]"')
+      expect(response.body).to include('name="user[department]"')
       expect(response.body).to include('name="user[password]"')
       expect(response.body).to include('name="user[password_confirmation]"')
+    end
+
+    it "所属フィールドが表示される" do
+      get signup_path
+      expect(response.body).to include('所属')
     end
 
     it "登録ボタンが表示される" do
@@ -130,6 +137,7 @@ RSpec.describe "Users", type: :request do
           user: {
             name: "テストユーザー",
             email: "test_signup_#{Time.current.to_i}@example.com",
+            department: "テスト部",
             password: "password123",
             password_confirmation: "password123"
           }

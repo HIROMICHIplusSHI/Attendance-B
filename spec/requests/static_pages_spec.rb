@@ -27,10 +27,15 @@ RSpec.describe "StaticPages", type: :request do
       expect(response.body).to include('このアプリケーションでは、登録されたユーザーの勤怠情報を閲覧・登録・編集することができます。')
     end
 
-    it "Sign upボタンが表示される" do
+    it "ログインボタンが表示される" do
       get root_path
-      expect(response.body).to include('Sign up')
+      expect(response.body).to include('ログイン')
       expect(response.body).to include('btn btn-lg btn-primary')
+    end
+
+    it "アカウント作成のリンクが表示される" do
+      get root_path
+      expect(response.body).to include('アカウント作成はこちら')
     end
   end
 end

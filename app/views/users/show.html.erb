@@ -46,114 +46,207 @@
 
 <!-- 基本情報編集モーダル用JavaScript -->
 <script>
-document.addEventListener('DOMContentLoaded', function() {
+// Turbo対応の基本情報モーダル初期化関数
+function initializeBasicInfoModal() {
   console.log('基本情報編集モーダルJavaScript初期化開始');
 
   const editBtn = document.getElementById('basic-info-edit-btn');
   const modal = document.getElementById('basic-info-modal');
 
   if (editBtn) {
-    editBtn.addEventListener('click', function(e) {
-      e.preventDefault();
-      console.log('基本情報編集ボタンがクリックされました');
-      openModal();
-    });
+    // 既存のリスナーを削除してから新しいリスナーを追加
+    editBtn.removeEventListener('click', handleModalClick);
+    editBtn.addEventListener('click', handleModalClick);
   }
 
   // モーダル背景クリックで閉じる
   if (modal) {
-    modal.addEventListener('click', function(e) {
-      if (e.target === modal) {
-        closeModal();
-      }
-    });
+    modal.removeEventListener('click', handleModalBackgroundClick);
+    modal.addEventListener('click', handleModalBackgroundClick);
   }
-
-  function openModal() {
-    console.log('openModal関数実行開始');
-    const modalContent = modal.querySelector('.modal-content');
-    const url = editBtn.dataset.url;
-
-    console.log('取得URL:', url);
-
-    // AJAXでモーダルコンテンツを取得
-    fetch(url, {
-      headers: {
-        'Accept': 'text/html',
-        'X-Requested-With': 'XMLHttpRequest'
-      }
-    })
-    .then(response => {
-      console.log('レスポンス受信:', response.status);
-      return response.text();
-    })
-    .then(html => {
-      console.log('HTML取得成功');
-      modalContent.innerHTML = html;
-      modal.style.display = 'block';
-
-      // フォーム送信を処理
-      const form = modalContent.querySelector('form');
-      if (form) {
-        form.addEventListener('submit', function(e) {
-          e.preventDefault();
-          submitModalForm(form);
-        });
-      }
-    })
-    .catch(error => {
-      console.error('モーダル読み込みエラー:', error);
-    });
-  }
-
-  function closeModal() {
-    console.log('モーダルを閉じています');
-    modal.style.display = 'none';
-    modal.querySelector('.modal-content').innerHTML = '';
-  }
-
-  function submitModalForm(form) {
-    console.log('フォーム送信開始');
-    const formData = new FormData(form);
-
-    fetch(form.action, {
-      method: 'POST',
-      body: formData,
-      headers: {
-        'X-Requested-With': 'XMLHttpRequest'
-      }
-    })
-    .then(response => {
-      if (response.redirected) {
-        console.log('送信成功 - ページリロード');
-        window.location.reload();
-      } else {
-        console.log('エラー - モーダル更新');
-        return response.text().then(html => {
-          const modalContent = modal.querySelector('.modal-content');
-          modalContent.innerHTML = html;
-
-          // 再度フォーム送信イベントを設定
-          const newForm = modalContent.querySelector('form');
-          if (newForm) {
-            newForm.addEventListener('submit', function(e) {
-              e.preventDefault();
-              submitModalForm(newForm);
-            });
-          }
-        });
-      }
-    })
-    .catch(error => {
-      console.error('フォーム送信エラー:', error);
-    });
-  }
-
-  // グローバルに公開（デバッグ用）
-  window.closeModal = closeModal;
 
   console.log('基本情報編集モーダルJavaScript初期化完了');
+}
+
+function handleModalClick(e) {
+  e.preventDefault();
+  console.log('基本情報編集ボタンがクリックされました');
+  openModal();
+}
+
+function handleModalBackgroundClick(e) {
+  const modal = document.getElementById('basic-info-modal');
+  if (e.target === modal) {
+    closeModal();
+  }
+}
+
+function openModal() {
+  console.log('openModal関数実行開始');
+  const editBtn = document.getElementById('basic-info-edit-btn');
+  const modal = document.getElementById('basic-info-modal');
+  const modalContent = modal.querySelector('.modal-content');
+  const url = editBtn.dataset.url;
+
+  console.log('取得URL:', url);
+
+  // CSRFトークンを取得
+  const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+  // AJAXでモーダルコンテンツを取得
+  fetch(url, {
+    headers: {
+      'Accept': 'text/html',
+      'X-Requested-With': 'XMLHttpRequest',
+      'X-CSRF-Token': csrfToken
+    }
+  })
+  .then(response => {
+    console.log('レスポンス受信:', response.status);
+    return response.text();
+  })
+  .then(html => {
+    console.log('HTML取得成功');
+    modalContent.innerHTML = html;
+    modal.style.display = 'block';
+
+    // フォーム送信を処理
+    const form = modalContent.querySelector('form');
+    if (form) {
+      form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        submitModalForm(form);
+      });
+    }
+
+    // モーダル内の閉じるボタンを処理
+    const closeBtn = modalContent.querySelector('.btn-close, [data-dismiss="modal"]');
+    if (closeBtn) {
+      closeBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        closeModal();
+      });
+    }
+  })
+  .catch(error => {
+    console.error('モーダル読み込みエラー:', error);
+  });
+}
+
+function closeModal() {
+  console.log('モーダルを閉じています');
+  const modal = document.getElementById('basic-info-modal');
+  modal.style.display = 'none';
+  modal.querySelector('.modal-content').innerHTML = '';
+}
+
+function submitModalForm(form) {
+  console.log('フォーム送信開始');
+  const formData = new FormData(form);
+  const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+  fetch(form.action, {
+    method: form.method || 'POST',
+    body: formData,
+    headers: {
+      'X-Requested-With': 'XMLHttpRequest',
+      'X-CSRF-Token': csrfToken,
+      'Accept': 'application/json'
+    }
+  })
+  .then(response => {
+    console.log('フォーム送信レスポンス:', response.status);
+    if (response.ok) {
+      return response.json().then(data => {
+        console.log('送信成功 - JSON レスポンス:', data);
+        closeModal();
+
+        // フラッシュメッセージを表示
+        if (data.message) {
+          showFlashMessage(data.status, data.message);
+        }
+
+        // ページリロード
+        if (window.Turbo) {
+          window.Turbo.visit(window.location.href);
+        } else {
+          window.location.reload();
+        }
+      });
+    } else {
+      console.log('エラー - モーダル更新');
+      return response.text().then(html => {
+        const modal = document.getElementById('basic-info-modal');
+        const modalContent = modal.querySelector('.modal-content');
+        modalContent.innerHTML = html;
+
+        // 再度フォーム送信イベントを設定
+        const newForm = modalContent.querySelector('form');
+        if (newForm) {
+          newForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            submitModalForm(newForm);
+          });
+        }
+
+        // 再度閉じるボタンを設定
+        const closeBtn = modalContent.querySelector('.btn-close, [data-dismiss="modal"]');
+        if (closeBtn) {
+          closeBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            closeModal();
+          });
+        }
+      });
+    }
+  })
+  .catch(error => {
+    console.error('フォーム送信エラー:', error);
+  });
+}
+
+// フラッシュメッセージを表示する関数
+function showFlashMessage(type, message) {
+  console.log('フラッシュメッセージ表示:', type, message);
+
+  // 既存のフラッシュメッセージを削除
+  const existingFlash = document.querySelector('.alert');
+  if (existingFlash) {
+    existingFlash.remove();
+  }
+
+  // 新しいフラッシュメッセージを作成
+  const flashDiv = document.createElement('div');
+  flashDiv.className = `alert alert-${type === 'success' ? 'info' : type}`;
+  flashDiv.textContent = message;
+  flashDiv.style.marginBottom = '20px';
+
+  // フラッシュメッセージコンテナに挿入
+  const flashContainer = document.getElementById('flash');
+  if (flashContainer) {
+    flashContainer.appendChild(flashDiv);
+
+    // 5秒後に自動で消去
+    setTimeout(() => {
+      if (flashDiv.parentNode) {
+        flashDiv.remove();
+      }
+    }, 5000);
+  }
+}
+
+// Turboイベントでの初期化
+document.addEventListener('turbo:load', function() {
+  initializeBasicInfoModal();
 });
+
+// 初回読み込み時の初期化（Turboが無効な場合の備え）
+document.addEventListener('DOMContentLoaded', function() {
+  initializeBasicInfoModal();
+});
+
+// グローバルに公開（デバッグ用）
+window.closeModal = closeModal;
 </script>
 
 <div>
@@ -176,7 +269,11 @@ document.addEventListener('DOMContentLoaded', function() {
       <% @attendances.each do |day| %>
       <tr>
         <td class="text-center"><%= l(day.worked_on, format: :short) %></td>
-        <td class="text-center"><%= ApplicationController::DAYS_OF_THE_WEEK[day.worked_on.wday] %></td>
+        <td class="text-center
+          <%= 'text-primary' if day.worked_on.wday == 6 %>
+          <%= 'text-danger' if day.worked_on.wday == 0 %>">
+          <%= ApplicationController::DAYS_OF_THE_WEEK[day.worked_on.wday] %>
+        </td>
         <td class="text-center">
         <% if btn_text = attendance_state(day) %>
           <%= button_to "#{btn_text}登録", user_attendance_path(@user, day),
@@ -186,8 +283,8 @@ document.addEventListener('DOMContentLoaded', function() {
             form_class: "d-inline" %>
         <% end %>
         </td>
-        <td class="text-center"><%= l(day.started_at, format: :time) if day.started_at.present? %></td>
-        <td class="text-center"><%= l(day.finished_at, format: :time) if day.finished_at.present? %></td>
+        <td class="text-center"><%= format_time_15min(day.started_at) if day.started_at.present? %></td>
+        <td class="text-center"><%= format_time_15min(day.finished_at) if day.finished_at.present? %></td>
         <td class="text-center">
           <% if day.started_at.present? && day.finished_at.present? %>
             <%= working_times(day.started_at, day.finished_at) %>
@@ -221,3 +318,16 @@ document.addEventListener('DOMContentLoaded', function() {
     </tfoot>
   </table>
 </div>
+
+<!-- 土日色分けスタイル -->
+<style>
+/* 土曜日のスタイル（青系） */
+#table-attendances tr:has(.text-primary) {
+  background-color: #f0f8ff;
+}
+
+/* 日曜日のスタイル（赤系） */
+#table-attendances tr:has(.text-danger) {
+  background-color: #fff5f5;
+}
+</style>

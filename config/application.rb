@@ -42,5 +42,8 @@ module App
 
     # Don't generate system test files.
     config.generators.system_tests = nil
+
+    # Importmap configuration
+    config.importmap.sweep_cache = true if Rails.env.development?
   end
 end
