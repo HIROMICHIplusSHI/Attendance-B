@@ -66,11 +66,21 @@ jobs:
     - name: 🔍 RuboCop (コード品質チェック)
       run: bundle exec rubocop
 
-    - name: 🧪 RSpec (テスト実行)
+    - name: 🧪 RSpec (テスト実行 + カバレッジ測定)
       env:
         RAILS_ENV: test
         DB_HOST: 127.0.0.1
       run: bundle exec rspec
+
+    - name: 📊 カバレッジレポート確認
+      run: |
+        echo "📈 SimpleCovカバレッジレポートを確認中..."
+        if [ -f coverage/.resultset.json ]; then
+          echo "✅ カバレッジデータが生成されました"
+          ls -la coverage/
+        else
+          echo "⚠️ カバレッジデータが見つかりません"
+        fi
 
   build_status:
     name: 📊 ビルド状況確認
