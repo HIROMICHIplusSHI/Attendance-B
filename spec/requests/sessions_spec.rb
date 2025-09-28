@@ -9,6 +9,12 @@ RSpec.describe "Sessions", type: :request do
       expect(response).to have_http_status(:success)
       expect(response.body).to include("ログイン")
     end
+
+    it "RememberMeチェックボックスが表示されること" do
+      get login_path
+      expect(response.body).to include('name="session[remember_me]"')
+      expect(response.body).to include("パスワードを記憶しますか？")
+    end
   end
 
   describe "POST /login" do
@@ -17,6 +23,18 @@ RSpec.describe "Sessions", type: :request do
         post login_path, params: { session: { email: user.email, password: "password" } }
         expect(response).to have_http_status(:redirect)
         expect(response).to redirect_to(user_path(user))
+      end
+
+      context "RememberMe機能" do
+        it "remember_meがチェックされている場合、remember_tokenがCookieに設定されること" do
+          post login_path, params: { session: { email: user.email, password: "password", remember_me: "1" } }
+          expect(cookies[:remember_token]).not_to be_nil
+        end
+
+        it "remember_meがチェックされていない場合、remember_tokenがCookieに設定されないこと" do
+          post login_path, params: { session: { email: user.email, password: "password", remember_me: "0" } }
+          expect(cookies[:remember_token]).to be_nil
+        end
       end
     end
 

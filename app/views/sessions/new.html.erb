@@ -10,6 +10,11 @@
       <%= f.label :password, "パスワード", class: "label-login" %>
       <%= f.password_field :password, class: "form-control" %>
 
+      <div class="form-group">
+        <%= f.check_box :remember_me, class: "form-check-input" %>
+        <%= f.label :remember_me, "パスワードを記憶しますか？", class: "form-check-label" %>
+      </div>
+
       <%= f.submit "ログイン", class: "btn btn-primary btn-block btn-login" %>
     <% end %>
     <p><%= link_to "アカウント作成", signup_path %></p>
