@@ -269,7 +269,11 @@ window.closeModal = closeModal;
       <% @attendances.each do |day| %>
       <tr>
         <td class="text-center"><%= l(day.worked_on, format: :short) %></td>
-        <td class="text-center"><%= ApplicationController::DAYS_OF_THE_WEEK[day.worked_on.wday] %></td>
+        <td class="text-center
+          <%= 'text-primary' if day.worked_on.wday == 6 %>
+          <%= 'text-danger' if day.worked_on.wday == 0 %>">
+          <%= ApplicationController::DAYS_OF_THE_WEEK[day.worked_on.wday] %>
+        </td>
         <td class="text-center">
         <% if btn_text = attendance_state(day) %>
           <%= button_to "#{btn_text}登録", user_attendance_path(@user, day),
@@ -279,8 +283,8 @@ window.closeModal = closeModal;
             form_class: "d-inline" %>
         <% end %>
         </td>
-        <td class="text-center"><%= l(day.started_at, format: :time) if day.started_at.present? %></td>
-        <td class="text-center"><%= l(day.finished_at, format: :time) if day.finished_at.present? %></td>
+        <td class="text-center"><%= format_time_15min(day.started_at) if day.started_at.present? %></td>
+        <td class="text-center"><%= format_time_15min(day.finished_at) if day.finished_at.present? %></td>
         <td class="text-center">
           <% if day.started_at.present? && day.finished_at.present? %>
             <%= working_times(day.started_at, day.finished_at) %>
@@ -314,3 +318,16 @@ window.closeModal = closeModal;
     </tfoot>
   </table>
 </div>
+
+<!-- 土日色分けスタイル -->
+<style>
+/* 土曜日のスタイル（青系） */
+#table-attendances tr:has(.text-primary) {
+  background-color: #f0f8ff;
+}
+
+/* 日曜日のスタイル（赤系） */
+#table-attendances tr:has(.text-danger) {
+  background-color: #fff5f5;
+}
+</style>

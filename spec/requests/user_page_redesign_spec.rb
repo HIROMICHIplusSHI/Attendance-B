@@ -131,10 +131,10 @@ RSpec.describe "UserPageRedesign", type: :request do
   end
 
   describe "動的データ表示確認" do
-    it "実際の勤怠データが表示されている" do
+    it "実際の勤怠データが15分単位で表示されている" do
       get user_path(user)
-      expect(response.body).to include("09:00") # 出勤時間
-      expect(response.body).to include("18:00") # 退勤時間
+      expect(response.body).to include("09:00") # 出勤時間（15分単位に丸められて表示）
+      expect(response.body).to include("18:00") # 退勤時間（15分単位に丸められて表示）
     end
 
     it "曜日が正しく表示されている" do
@@ -142,9 +142,9 @@ RSpec.describe "UserPageRedesign", type: :request do
       expect(response.body).to match(/(月|火|水|木|金|土|日)/)
     end
 
-    it "在社時間が計算されて表示されている" do
+    it "在社時間が15分単位で計算されて表示されている" do
       get user_path(user)
-      expect(response.body).to include("9.00") # 9時間勤務
+      expect(response.body).to include("9.00") # 9時間勤務（15分単位計算）
     end
   end
 end
