@@ -1,0 +1,36 @@
+ja:
+  activerecord:
+    models:
+      user: ユーザー
+      attendance: 勤怠
+    attributes:
+      user:
+        name: 名前
+        email: メールアドレス
+        department: 所属
+        basic_time: 基本時間
+        work_time: 指定勤務時間
+        password: パスワード
+        password_confirmation: パスワード再入力
+      attendance:
+        worked_on: 日付
+        started_at: 出勤時間
+        finished_at: 退勤時間
+        note: 備考
+  date:
+    formats:
+      default: "%Y/%m/%d"
+      short: "%-m/%-d"
+      middle: "%Y年%m月"
+  time:
+    formats:
+      default: "%Y年%m月%d日(%a) %H時%M分%S秒 %z"
+      short: "%m/%d %H:%M"
+      time: "%H:%M"
+  views:
+    pagination:
+      first: "最初"
+      last: "最後"
+      previous: "前"
+      next: "次"
+      truncate: "..."

@@ -1,0 +1,86 @@
+/* ユーザー情報テーブル */
+
+.user-table {
+  vertical-align: middle;
+  text-align: center;
+}
+
+.label-signup {
+  margin-top: 5px;
+}
+
+.btn-signup {
+  margin-top: 10px;
+}
+
+/* テーブルのセンタリング */
+.center {
+  text-align: center;
+}
+
+#table-users {
+  th {
+    vertical-align: middle;
+  }
+
+  td {
+    vertical-align: middle;
+  }
+}
+
+/* 基本情報編集モーダルウインドウ */
+.label-basic-info {
+  margin-top: 5px;
+}
+
+.btn-basic-info {
+  margin: 15px 0;
+  width: 30%;
+}
+
+/* モーダル全体のスタイル調整 */
+.modal-content {
+  background-color: #fff;
+  border-radius: 6px;
+  box-shadow: 0 3px 9px rgba(0, 0, 0, 0.5);
+}
+
+.modal-header {
+  padding: 15px;
+  border-bottom: 1px solid #e5e5e5;
+
+  .close {
+    margin-top: -2px;
+    font-size: 21px;
+    font-weight: bold;
+    line-height: 1;
+    color: #000;
+    text-shadow: 0 1px 0 #fff;
+    opacity: 0.2;
+
+    &:hover {
+      opacity: 0.5;
+    }
+  }
+}
+
+.modal-body {
+  padding: 15px;
+}
+
+.modal-title {
+  margin: 0;
+  line-height: 1.42857143;
+}
+
+/* ユーザー勤怠情報テーブル */
+#table-attendances {
+  th {
+    vertical-align: middle;
+    text-align: center;
+  }
+  td {
+    vertical-align: middle;
+    text-align: center;
+  }
+}

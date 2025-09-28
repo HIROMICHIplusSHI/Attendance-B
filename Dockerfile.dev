@@ -1,0 +1,46 @@
+# 開発環境専用Dockerfile
+FROM ruby:3.2.4-slim
+
+# 開発環境用のワーキングディレクトリ
+WORKDIR /rails
+
+# 開発環境用の環境変数
+ENV RAILS_ENV="development" \
+    BUNDLE_PATH="/bundle" \
+    BUNDLE_BIN="/bundle/bin"
+
+# システムパッケージのインストール
+RUN apt-get update -qq && \
+    apt-get install --no-install-recommends -y \
+    build-essential \
+    default-libmysqlclient-dev \
+    libpq-dev \
+    git \
+    curl \
+    vim \
+    && rm -rf /var/lib/apt/lists/*
+
+# bundleディレクトリの権限設定
+RUN mkdir -p /bundle && chmod 777 /bundle
+
+# ユーザー作成（ホストと同じUID/GID）
+ARG USER_ID=1000
+ARG GROUP_ID=1000
+RUN groupadd -g $GROUP_ID rails && \
+    useradd -u $USER_ID -g $GROUP_ID -m -s /bin/bash rails
+
+# 開発用ディレクトリの権限設定
+RUN chown -R rails:rails /rails /bundle
+
+USER rails:rails
+
+# Gemfile のコピーとbundle install
+COPY --chown=rails:rails Gemfile Gemfile.lock ./
+RUN bundle install
+
+# アプリケーションコードのコピー
+COPY --chown=rails:rails . .
+
+EXPOSE 3000
+
+CMD ["bundle", "exec", "rails", "server", "-b", "0.0.0.0"]

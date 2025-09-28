@@ -22,10 +22,11 @@ jobs:
           MYSQL_ROOT_PASSWORD: password
           MYSQL_DATABASE: attendance_app_test
         options: >-
-          --health-cmd="mysqladmin ping"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=3
+          --health-cmd="mysqladmin ping -h localhost"
+          --health-interval=5s
+          --health-timeout=3s
+          --health-retries=10
+          --health-start-period=30s
         ports:
           - 3306:3306
 
@@ -47,8 +48,18 @@ jobs:
     - name: 🗄️ データベースセットアップ
       env:
         RAILS_ENV: test
-        DATABASE_URL: mysql2://root:password@127.0.0.1:3306/attendance_app_test
+        DB_HOST: 127.0.0.1
       run: |
+        # MySQL接続待機
+        for i in {1..30}; do
+          if mysqladmin ping -h127.0.0.1 -uroot -ppassword --silent; then
+            echo "MySQL is ready!"
+            break
+          fi
+          echo "Waiting for MySQL... ($i/30)"
+          sleep 2
+        done
+
         bundle exec rails db:create
         bundle exec rails db:migrate
 
@@ -58,7 +69,7 @@ jobs:
     - name: 🧪 RSpec (テスト実行)
       env:
         RAILS_ENV: test
-        DATABASE_URL: mysql2://root:password@127.0.0.1:3306/attendance_app_test
+        DB_HOST: 127.0.0.1
       run: bundle exec rspec
 
   build_status:
