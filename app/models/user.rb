@@ -7,6 +7,8 @@ class User < ApplicationRecord
                     format: { with: /\A[\w+\-.]+@[a-z\d\-.]+\.[a-z]+\z/i },
                     uniqueness: { case_sensitive: false }
   validates :password, presence: true, length: { minimum: 6 }
+  validates :department, length: { maximum: 50 }, allow_blank: true
+  validates :basic_time, :work_time, presence: true
 
   before_save { self.email = email.downcase }
 end

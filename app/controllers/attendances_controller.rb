@@ -4,8 +4,7 @@ class AttendancesController < ApplicationController
   before_action :set_attendance, only: [:update]
 
   def edit_one_month
-    # 1ヶ月の勤怠編集ページ（まだ実装していないのでリダイレクト）
-    redirect_to @user, notice: '1ヶ月の勤怠編集機能は現在開発中です'
+    # 簡単な実装（feature/15で完全実装予定）
   end
 
   def update
