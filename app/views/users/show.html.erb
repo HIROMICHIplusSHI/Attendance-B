@@ -14,7 +14,7 @@
     </tr>
 
     <tr>
-      <td>所属：未所属</td>
+      <td>所属：<%= @user.department.present? ? @user.department : "未所属" %></td>
       <td>名前：<%= @user.name %></td>
       <td>出勤日数：<%= @worked_sum %>日</td>
       <td>月末日：<%= @last_day.present? ? l(@last_day, format: :short) : "なし" %></td>
@@ -25,7 +25,136 @@
 <!-- 1ヶ月の勤怠編集ボタン（ユーザー情報テーブル下） -->
 <div class="btn-users-show">
   <%= link_to "1ヶ月の勤怠編集へ", edit_one_month_user_attendances_path(@user, date: @first_day), class: "btn btn-success", data: { turbo: false } %>
+  <% if current_user.admin? %>
+    <%= link_to "基本情報編集", "#",
+        class: "btn btn-primary",
+        id: "basic-info-edit-btn",
+        data: {
+          url: edit_basic_info_user_path(@user)
+        } %>
+  <% end %>
 </div>
+
+<!-- モーダルコンテナ -->
+<div id="basic-info-modal" class="modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1050; background-color: rgba(0,0,0,0.3);">
+  <div class="modal-dialog" style="position: relative; width: auto; margin: 10px auto; max-width: 600px; top: 50%; transform: translateY(-50%);">
+    <div class="modal-content" style="box-shadow: 0 5px 15px rgba(0,0,0,0.5);">
+      <!-- モーダルコンテンツはJavaScriptで挿入 -->
+    </div>
+  </div>
+</div>
+
+<!-- 基本情報編集モーダル用JavaScript -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  console.log('基本情報編集モーダルJavaScript初期化開始');
+
+  const editBtn = document.getElementById('basic-info-edit-btn');
+  const modal = document.getElementById('basic-info-modal');
+
+  if (editBtn) {
+    editBtn.addEventListener('click', function(e) {
+      e.preventDefault();
+      console.log('基本情報編集ボタンがクリックされました');
+      openModal();
+    });
+  }
+
+  // モーダル背景クリックで閉じる
+  if (modal) {
+    modal.addEventListener('click', function(e) {
+      if (e.target === modal) {
+        closeModal();
+      }
+    });
+  }
+
+  function openModal() {
+    console.log('openModal関数実行開始');
+    const modalContent = modal.querySelector('.modal-content');
+    const url = editBtn.dataset.url;
+
+    console.log('取得URL:', url);
+
+    // AJAXでモーダルコンテンツを取得
+    fetch(url, {
+      headers: {
+        'Accept': 'text/html',
+        'X-Requested-With': 'XMLHttpRequest'
+      }
+    })
+    .then(response => {
+      console.log('レスポンス受信:', response.status);
+      return response.text();
+    })
+    .then(html => {
+      console.log('HTML取得成功');
+      modalContent.innerHTML = html;
+      modal.style.display = 'block';
+
+      // フォーム送信を処理
+      const form = modalContent.querySelector('form');
+      if (form) {
+        form.addEventListener('submit', function(e) {
+          e.preventDefault();
+          submitModalForm(form);
+        });
+      }
+    })
+    .catch(error => {
+      console.error('モーダル読み込みエラー:', error);
+    });
+  }
+
+  function closeModal() {
+    console.log('モーダルを閉じています');
+    modal.style.display = 'none';
+    modal.querySelector('.modal-content').innerHTML = '';
+  }
+
+  function submitModalForm(form) {
+    console.log('フォーム送信開始');
+    const formData = new FormData(form);
+
+    fetch(form.action, {
+      method: 'POST',
+      body: formData,
+      headers: {
+        'X-Requested-With': 'XMLHttpRequest'
+      }
+    })
+    .then(response => {
+      if (response.redirected) {
+        console.log('送信成功 - ページリロード');
+        window.location.reload();
+      } else {
+        console.log('エラー - モーダル更新');
+        return response.text().then(html => {
+          const modalContent = modal.querySelector('.modal-content');
+          modalContent.innerHTML = html;
+
+          // 再度フォーム送信イベントを設定
+          const newForm = modalContent.querySelector('form');
+          if (newForm) {
+            newForm.addEventListener('submit', function(e) {
+              e.preventDefault();
+              submitModalForm(newForm);
+            });
+          }
+        });
+      }
+    })
+    .catch(error => {
+      console.error('フォーム送信エラー:', error);
+    });
+  }
+
+  // グローバルに公開（デバッグ用）
+  window.closeModal = closeModal;
+
+  console.log('基本情報編集モーダルJavaScript初期化完了');
+});
+</script>
 
 <div>
 
