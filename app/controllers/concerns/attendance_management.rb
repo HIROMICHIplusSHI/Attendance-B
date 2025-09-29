@@ -99,7 +99,7 @@ module AttendanceManagement
   def validate_attendance_times(attendance)
     return unless attendance.started_at.present? && attendance.finished_at.present?
 
-    return unless attendance.started_at >= attendance.finished_at
+    return if attendance.started_at < attendance.finished_at
 
     raise "#{attendance.worked_on.strftime('%m/%d')}の出勤時間が退勤時間より遅いか同じ時間です"
   end
@@ -107,7 +107,6 @@ module AttendanceManagement
   def handle_update_error(error)
     Rails.logger.error "Attendance update error: #{error.message}"
     flash[:danger] = error.message.include?('出勤時間が退勤時間より') ? error.message : '勤怠情報の更新に失敗しました'
-    prepare_edit_view
-    render 'edit_one_month'
+    redirect_to edit_one_month_user_attendances_path(@user, date: @first_day)
   end
 end
