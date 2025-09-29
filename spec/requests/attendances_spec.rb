@@ -296,9 +296,9 @@ RSpec.describe "Attendances", type: :request do
             expect(flash[:danger]).to be_present
           end
 
-          it "編集ページが再表示される" do
+          it "編集ページにリダイレクトされる" do
             patch update_one_month_user_attendances_path(general_user), params: invalid_params
-            expect(response.body).to include('1ヶ月の勤怠編集')
+            expect(response).to redirect_to(edit_one_month_user_attendances_path(general_user))
           end
         end
 
@@ -352,11 +352,10 @@ RSpec.describe "Attendances", type: :request do
             expect(flash[:danger]).to match(/出勤時間が退勤時間より遅いか同じ時間です/)
           end
 
-          it "時間バリデーションエラー時は編集ページが再表示される" do
+          it "時間バリデーションエラー時は編集ページにリダイレクトされる" do
             patch update_one_month_user_attendances_path(general_user), params: invalid_time_params
 
-            expect(response.body).to include('1ヶ月の勤怠編集')
-            expect(response.body).to include(general_user.name)
+            expect(response).to redirect_to(edit_one_month_user_attendances_path(general_user))
           end
         end
 
