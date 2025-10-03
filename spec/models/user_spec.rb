@@ -57,7 +57,9 @@ RSpec.describe User, type: :model do
     describe '#manager?' do
       context '部下がいる場合' do
         let(:manager) { User.create(name: "上長", email: "manager@example.com", password: "password") }
-        let!(:subordinate) { User.create(name: "部下", email: "subordinate@example.com", password: "password", manager: manager) }
+        let!(:subordinate) do
+          User.create(name: "部下", email: "subordinate@example.com", password: "password", manager:)
+        end
 
         it 'trueを返すこと' do
           expect(manager.manager?).to be true

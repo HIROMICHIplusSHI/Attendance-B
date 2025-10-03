@@ -23,9 +23,9 @@ RSpec.describe AttendanceChangeRequest, type: :model do
     let(:attendance) { user.attendances.create(worked_on: Date.today, started_at: Time.current) }
     let(:request) do
       AttendanceChangeRequest.new(
-        attendance: attendance,
+        attendance:,
         requester: user,
-        approver: approver,
+        approver:,
         original_started_at: Time.current,
         original_finished_at: Time.current + 8.hours,
         requested_started_at: Time.current + 1.hour,
@@ -79,9 +79,9 @@ RSpec.describe AttendanceChangeRequest, type: :model do
     let(:attendance) { user.attendances.create(worked_on: Date.today, started_at: Time.current) }
     let(:request) do
       AttendanceChangeRequest.create(
-        attendance: attendance,
+        attendance:,
         requester: user,
-        approver: approver,
+        approver:,
         original_started_at: Time.current,
         original_finished_at: Time.current + 8.hours,
         requested_started_at: Time.current + 1.hour,

@@ -17,8 +17,8 @@ RSpec.describe MonthlyApproval, type: :model do
     let(:approver) { User.create(name: "承認者", email: "approver@example.com", password: "password") }
     let(:approval) do
       MonthlyApproval.new(
-        user: user,
-        approver: approver,
+        user:,
+        approver:,
         target_month: Date.today.beginning_of_month
       )
     end
@@ -44,14 +44,14 @@ RSpec.describe MonthlyApproval, type: :model do
 
     it '同じユーザー・月の組み合わせは一意であること' do
       MonthlyApproval.create!(
-        user: user,
-        approver: approver,
+        user:,
+        approver:,
         target_month: Date.today.beginning_of_month
       )
 
       duplicate = MonthlyApproval.new(
-        user: user,
-        approver: approver,
+        user:,
+        approver:,
         target_month: Date.today.beginning_of_month
       )
 
@@ -64,8 +64,8 @@ RSpec.describe MonthlyApproval, type: :model do
     let(:approver) { User.create(name: "承認者", email: "approver@example.com", password: "password") }
     let(:approval) do
       MonthlyApproval.create(
-        user: user,
-        approver: approver,
+        user:,
+        approver:,
         target_month: Date.today.beginning_of_month
       )
     end
@@ -90,8 +90,8 @@ RSpec.describe MonthlyApproval, type: :model do
     let(:approver) { User.create(name: "承認者", email: "approver@example.com", password: "password") }
     let(:approval) do
       MonthlyApproval.create(
-        user: user,
-        approver: approver,
+        user:,
+        approver:,
         target_month: Date.today.beginning_of_month
       )
     end

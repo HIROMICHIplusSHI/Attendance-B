@@ -17,8 +17,8 @@ RSpec.describe OvertimeRequest, type: :model do
     let(:approver) { User.create(name: "承認者", email: "approver@example.com", password: "password") }
     let(:request) do
       OvertimeRequest.new(
-        user: user,
-        approver: approver,
+        user:,
+        approver:,
         worked_on: Date.today,
         estimated_end_time: Time.current + 2.hours,
         business_content: "システムメンテナンス作業"
@@ -60,8 +60,8 @@ RSpec.describe OvertimeRequest, type: :model do
     let(:approver) { User.create(name: "承認者", email: "approver@example.com", password: "password") }
     let(:request) do
       OvertimeRequest.create(
-        user: user,
-        approver: approver,
+        user:,
+        approver:,
         worked_on: Date.today,
         estimated_end_time: Time.current + 2.hours,
         business_content: "システムメンテナンス作業"
@@ -88,8 +88,8 @@ RSpec.describe OvertimeRequest, type: :model do
     let(:approver) { User.create(name: "承認者", email: "approver@example.com", password: "password") }
     let(:request) do
       OvertimeRequest.create(
-        user: user,
-        approver: approver,
+        user:,
+        approver:,
         worked_on: Date.today,
         estimated_end_time: Time.current + 2.hours,
         business_content: "システムメンテナンス作業"
