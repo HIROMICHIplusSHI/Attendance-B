@@ -4,6 +4,10 @@ class User < ApplicationRecord
   has_many :attendances, dependent: :destroy
   has_secure_password validations: false
 
+  # 組織階層
+  belongs_to :manager, class_name: 'User', optional: true
+  has_many :subordinates, class_name: 'User', foreign_key: :manager_id
+
   validates :name, presence: true, length: { maximum: 50 }
   validates :email, presence: true, length: { maximum: 255 },
                     format: { with: /\A[\w+\-.]+@[a-z\d\-.]+\.[a-z]+\z/i },
@@ -46,5 +50,10 @@ class User < ApplicationRecord
   # ユーザーのログイン情報を破棄する
   def forget
     update_attribute(:remember_digest, nil)
+  end
+
+  # 部下がいるかどうかを判定
+  def manager?
+    subordinates.exists?
   end
 end
