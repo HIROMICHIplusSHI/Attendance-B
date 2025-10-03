@@ -10,7 +10,23 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2025_09_28_135144) do
+ActiveRecord::Schema[7.1].define(version: 2025_10_03_073452) do
+  create_table "attendance_change_requests", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "attendance_id", null: false
+    t.bigint "requester_id", null: false
+    t.bigint "approver_id", null: false
+    t.datetime "original_started_at", null: false
+    t.datetime "original_finished_at", null: false
+    t.datetime "requested_started_at", null: false
+    t.datetime "requested_finished_at", null: false
+    t.integer "status", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["approver_id"], name: "index_attendance_change_requests_on_approver_id"
+    t.index ["attendance_id"], name: "index_attendance_change_requests_on_attendance_id"
+    t.index ["requester_id"], name: "index_attendance_change_requests_on_requester_id"
+  end
+
   create_table "attendances", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.date "worked_on", null: false
     t.datetime "started_at"
@@ -21,6 +37,33 @@ ActiveRecord::Schema[7.1].define(version: 2025_09_28_135144) do
     t.datetime "updated_at", null: false
     t.index ["user_id", "worked_on"], name: "index_attendances_on_user_id_and_worked_on", unique: true
     t.index ["user_id"], name: "index_attendances_on_user_id"
+  end
+
+  create_table "monthly_approvals", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.bigint "approver_id", null: false
+    t.date "target_month", null: false
+    t.integer "status", default: 0, null: false
+    t.datetime "approved_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["approver_id"], name: "index_monthly_approvals_on_approver_id"
+    t.index ["user_id", "target_month"], name: "index_monthly_approvals_on_user_id_and_target_month", unique: true
+    t.index ["user_id"], name: "index_monthly_approvals_on_user_id"
+  end
+
+  create_table "overtime_requests", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.bigint "approver_id", null: false
+    t.date "worked_on", null: false
+    t.datetime "estimated_end_time", null: false
+    t.text "business_content", null: false
+    t.boolean "next_day_flag", default: false
+    t.integer "status", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["approver_id"], name: "index_overtime_requests_on_approver_id"
+    t.index ["user_id"], name: "index_overtime_requests_on_user_id"
   end
 
   create_table "users", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
@@ -34,8 +77,18 @@ ActiveRecord::Schema[7.1].define(version: 2025_09_28_135144) do
     t.boolean "admin", default: false
     t.string "department"
     t.string "remember_digest"
+    t.bigint "manager_id"
     t.index ["email"], name: "index_users_on_email", unique: true
+    t.index ["manager_id"], name: "index_users_on_manager_id"
   end
 
+  add_foreign_key "attendance_change_requests", "attendances"
+  add_foreign_key "attendance_change_requests", "users", column: "approver_id"
+  add_foreign_key "attendance_change_requests", "users", column: "requester_id"
   add_foreign_key "attendances", "users"
+  add_foreign_key "monthly_approvals", "users"
+  add_foreign_key "monthly_approvals", "users", column: "approver_id"
+  add_foreign_key "overtime_requests", "users"
+  add_foreign_key "overtime_requests", "users", column: "approver_id"
+  add_foreign_key "users", "users", column: "manager_id"
 end

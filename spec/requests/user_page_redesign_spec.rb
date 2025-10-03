@@ -11,14 +11,21 @@ RSpec.describe "UserPageRedesign", type: :request do
     # ログイン処理
     post login_path, params: { session: { email: user.email, password: "password123" } }
 
-    # テスト用勤怠データ作成
+    # テスト用勤怠データ作成（過去3日分：出退勤済み）
     3.times do |i|
       user.attendances.create!(
-        worked_on: Date.current.beginning_of_month + i.days,
-        started_at: Time.current.change(hour: 9, min: 0) + i.days,
-        finished_at: Time.current.change(hour: 18, min: 0) + i.days
+        worked_on: Date.current - 3.days + i.days,
+        started_at: Time.current.change(hour: 9, min: 0) - 3.days + i.days,
+        finished_at: Time.current.change(hour: 18, min: 0) - 3.days + i.days
       )
     end
+
+    # 当日の勤怠データ作成（未出勤状態：登録ボタン表示のため）
+    user.attendances.create!(
+      worked_on: Date.current,
+      started_at: nil,
+      finished_at: nil
+    )
   end
 
   describe "ユーザー詳細ページのクローン元完全再現" do
