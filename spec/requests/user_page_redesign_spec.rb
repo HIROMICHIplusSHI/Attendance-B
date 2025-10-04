@@ -72,12 +72,12 @@ RSpec.describe "UserPageRedesign", type: :request do
       end
     end
 
-    describe "7列シンプル勤怠テーブル" do
+    describe "8列シンプル勤怠テーブル" do
       it "table-attendancesのidが適用されている" do
         expect(response.body).to include('id="table-attendances"')
       end
 
-      it "正確な7列のヘッダーが表示されている" do
+      it "正確な8列のヘッダーが表示されている" do
         expect(response.body).to include('<th class="text-center">日付</th>')
         expect(response.body).to include('<th class="text-center">曜日</th>')
         expect(response.body).to include('<th class="text-center">勤怠登録</th>')
@@ -85,12 +85,12 @@ RSpec.describe "UserPageRedesign", type: :request do
         expect(response.body).to include('<th class="text-center">退勤時間</th>')
         expect(response.body).to include('<th class="text-center">在社時間</th>')
         expect(response.body).to include('<th class="text-center">備考</th>')
+        expect(response.body).to include('<th class="text-center">残業申請</th>')
       end
 
       it "複雑な多重ヘッダー（rowspan、colspan）が使用されていない" do
         expect(response.body).not_to include('rowspan="3"')
         expect(response.body).not_to include('colspan="8"')
-        expect(response.body).not_to include("残業申請")
       end
 
       it "勤怠登録ボタンが適切に表示されている" do
