@@ -24,6 +24,9 @@ RSpec.configure do |config|
 
   # 各テスト前にデータベースをクリーンアップ
   config.before(:each) do
+    AttendanceChangeRequest.delete_all
+    OvertimeRequest.delete_all
+    MonthlyApproval.delete_all
     Attendance.delete_all
     User.delete_all
   end

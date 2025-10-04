@@ -17,7 +17,9 @@ Rails.application.routes.draw do
         get 'edit_one_month'
         patch 'update_one_month'
       end
+      resources :application_requests, only: %i[new create]
     end
+    resources :monthly_approvals, only: [:create]
   end
 
   # ヘルスチェック用
