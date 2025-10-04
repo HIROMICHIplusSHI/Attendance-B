@@ -319,6 +319,64 @@ window.closeModal = closeModal;
   </table>
 </div>
 
+<!-- 所属長承認申請セクション -->
+<div class="approval-section" style="margin-top: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 4px;">
+  <h4>所属長承認</h4>
+  <%= form_with model: MonthlyApproval.new, url: user_monthly_approvals_path(@user), local: true, id: "approval-form" do |f| %>
+    <%= f.hidden_field :target_month, value: @first_day %>
+
+    <div class="form-group">
+      <%= f.label :approver_id, "承認者を選択" %>
+      <%= f.select :approver_id,
+          options_from_collection_for_select(User.where.not(id: @user.id), :id, :name, @user.manager_id),
+          { prompt: "承認者を選択してください" },
+          class: "form-control" %>
+    </div>
+
+    <div class="form-group" style="margin-top: 10px;">
+      <%= f.submit "申請", class: "btn btn-primary" %>
+    </div>
+  <% end %>
+</div>
+
+<!-- 所属長承認申請確認ダイアログ -->
+<script>
+document.addEventListener('turbo:load', function() {
+  initializeApprovalConfirmation();
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+  initializeApprovalConfirmation();
+});
+
+function initializeApprovalConfirmation() {
+  const form = document.getElementById('approval-form');
+
+  if (form) {
+    form.removeEventListener('submit', handleApprovalSubmit);
+    form.addEventListener('submit', handleApprovalSubmit);
+  }
+}
+
+function handleApprovalSubmit(e) {
+  const approverSelect = document.querySelector('#approval-form select[name="monthly_approval[approver_id]"]');
+  const approverName = approverSelect.options[approverSelect.selectedIndex].text;
+
+  if (approverSelect.value === '') {
+    alert('承認者を選択してください。');
+    e.preventDefault();
+    return false;
+  }
+
+  const message = `${approverName} に勤怠を申請します。よろしいですか？`;
+
+  if (!confirm(message)) {
+    e.preventDefault();
+    return false;
+  }
+}
+</script>
+
 <!-- 土日色分けスタイル -->
 <style>
 /* 土曜日のスタイル（青系） */

@@ -18,6 +18,7 @@ Rails.application.routes.draw do
         patch 'update_one_month'
       end
     end
+    resources :monthly_approvals, only: [:create]
   end
 
   # ヘルスチェック用
