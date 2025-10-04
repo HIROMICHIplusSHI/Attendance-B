@@ -247,12 +247,13 @@ RSpec.describe "BasicInfoModal", type: :request do
     it "ユーザー詳細ページにモーダル開くリンクが表示される" do
       get user_path(general_user)
       expect(response.body).to include('基本情報編集')
-      expect(response.body).to include('id="basic-info-edit-btn"')
+      expect(response.body).to include('data-action="modal#open"')
     end
 
     it "モーダル用のコンテナが存在する" do
       get user_path(general_user)
-      expect(response.body).to include('id="basic-info-modal"')
+      expect(response.body).to include('data-controller="modal"')
+      expect(response.body).to include('data-modal-target="container"')
     end
 
     it "基本情報編集ページがAJAXレスポンスに対応している" do
