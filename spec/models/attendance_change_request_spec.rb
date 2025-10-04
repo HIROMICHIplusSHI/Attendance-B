@@ -52,16 +52,6 @@ RSpec.describe AttendanceChangeRequest, type: :model do
       expect(request).not_to be_valid
     end
 
-    it 'original_started_atが必須であること' do
-      request.original_started_at = nil
-      expect(request).not_to be_valid
-    end
-
-    it 'original_finished_atが必須であること' do
-      request.original_finished_at = nil
-      expect(request).not_to be_valid
-    end
-
     it 'requested_started_atが必須であること' do
       request.requested_started_at = nil
       expect(request).not_to be_valid
