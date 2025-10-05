@@ -16,7 +16,9 @@ class MonthlyApprovalsController < ApplicationController
     selected_approvals = approval_params.select { |_id, attrs| attrs[:selected] == '1' }
 
     if selected_approvals.empty?
-      redirect_to monthly_approvals_path, alert: '承認する項目を選択してください'
+      @approvals = MonthlyApproval.pending.where(approver: current_user)
+      flash.now[:alert] = '承認する項目を選択してください'
+      render :index, layout: false, status: :unprocessable_entity
       return
     end
 
@@ -29,9 +31,12 @@ class MonthlyApprovalsController < ApplicationController
       end
     end
 
-    redirect_to monthly_approvals_path, notice: '承認処理が完了しました'
+    flash[:success] = '承認処理が完了しました'
+    redirect_to user_path(current_user)
   rescue ActiveRecord::RecordInvalid => e
-    redirect_to monthly_approvals_path, alert: "エラーが発生しました: #{e.message}"
+    @approvals = MonthlyApproval.pending.where(approver: current_user)
+    flash.now[:alert] = "エラーが発生しました: #{e.message}"
+    render :index, layout: false, status: :unprocessable_entity
   end
 
   def create
