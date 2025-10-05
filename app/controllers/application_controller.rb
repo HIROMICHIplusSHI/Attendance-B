@@ -41,7 +41,12 @@ class ApplicationController < ActionController::Base
     return false unless current_user
 
     @user = User.find(params[:id]) if params[:id]
-    current_user?(@user)
+    return true if current_user?(@user)
+
+    # マネージャーが部下のページを閲覧できるようにする
+    return true if current_user.manager? && @user.manager_id == current_user.id
+
+    false
   end
 
   # 月次データ設定
