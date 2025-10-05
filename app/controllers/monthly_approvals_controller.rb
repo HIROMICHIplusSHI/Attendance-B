@@ -1,6 +1,26 @@
 class MonthlyApprovalsController < ApplicationController
   before_action :logged_in_user
-  before_action :set_user
+  before_action :set_user, only: [:create]
+  before_action :require_manager, only: %i[index bulk_update]
+
+  def index
+    @approvals = MonthlyApproval.pending.where(approver: current_user)
+
+    return unless request.xhr?
+
+    render layout: false
+  end
+
+  def bulk_update
+    selected_approvals = extract_selected_approvals
+
+    return render_no_selection_error if selected_approvals.empty?
+
+    process_bulk_update(selected_approvals)
+    handle_bulk_update_success
+  rescue ActiveRecord::RecordInvalid => e
+    handle_bulk_update_error(e)
+  end
 
   def create
     # 既存の申請があれば上書き（再承認対応）
@@ -37,5 +57,44 @@ class MonthlyApprovalsController < ApplicationController
 
   def approval_params
     params.require(:monthly_approval).permit(:approver_id, :target_month)
+  end
+
+  def require_manager
+    return if current_user.manager?
+
+    redirect_to root_path, alert: '管理者権限が必要です'
+  end
+
+  def extract_selected_approvals
+    approval_params = params[:approvals] || {}
+    approval_params.select { |_id, attrs| attrs[:selected] == '1' }
+  end
+
+  def render_no_selection_error
+    @approvals = MonthlyApproval.pending.where(approver: current_user)
+    flash.now[:alert] = '承認する項目を選択してください'
+    render :index, layout: false, status: :unprocessable_entity
+  end
+
+  def process_bulk_update(selected_approvals)
+    MonthlyApproval.transaction do
+      selected_approvals.each do |id, attrs|
+        approval = MonthlyApproval.find_by(id:, approver: current_user)
+        next unless approval
+
+        approval.update!(status: attrs[:status])
+      end
+    end
+  end
+
+  def handle_bulk_update_success
+    flash[:success] = '承認処理が完了しました'
+    redirect_to user_path(current_user)
+  end
+
+  def handle_bulk_update_error(error)
+    @approvals = MonthlyApproval.pending.where(approver: current_user)
+    flash.now[:alert] = "エラーが発生しました: #{error.message}"
+    render :index, layout: false, status: :unprocessable_entity
   end
 end

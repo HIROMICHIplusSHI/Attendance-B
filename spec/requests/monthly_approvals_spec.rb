@@ -8,6 +8,12 @@ RSpec.describe "MonthlyApprovals", type: :request do
   let(:target_month) { Date.current.beginning_of_month }
 
   before do
+    # 勤怠データを作成（月次承認には勤怠データが必須）
+    user.attendances.create!(
+      worked_on: target_month,
+      started_at: Time.zone.parse("#{target_month} 09:00"),
+      finished_at: Time.zone.parse("#{target_month} 18:00")
+    )
     post login_path, params: { session: { email: user.email, password: "password" } }
   end
 
@@ -57,6 +63,7 @@ RSpec.describe "MonthlyApprovals", type: :request do
 
     context "既存の申請がある場合（再承認）" do
       before do
+        # 既存の月次承認を作成（勤怠データは親のbeforeで作成済み）
         MonthlyApproval.create!(
           user:,
           approver:,

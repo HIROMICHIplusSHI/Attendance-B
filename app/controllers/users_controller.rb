@@ -75,7 +75,9 @@ class UsersController < ApplicationController
   end
 
   def set_one_month
-    result = MonthlyAttendanceService.new(@user, params[:date]).call
+    # monthパラメータがあれば優先、なければdateパラメータを使用
+    date_param = params[:month] || params[:date]
+    result = MonthlyAttendanceService.new(@user, date_param).call
     @first_day = result[:first_day]
     @last_day = result[:last_day]
     @attendances = result[:attendances]

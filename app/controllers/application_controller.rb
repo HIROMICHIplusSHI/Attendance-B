@@ -41,7 +41,11 @@ class ApplicationController < ActionController::Base
     return false unless current_user
 
     @user = User.find(params[:id]) if params[:id]
-    current_user?(@user)
+    current_user?(@user) || manager_of_user?
+  end
+
+  def manager_of_user?
+    current_user.manager? && @user&.manager_id == current_user.id
   end
 
   # 月次データ設定
