@@ -4,9 +4,13 @@
   <table class="table table-bordered table-condensed user-table">
     <tr>
       <td>
-        <%= link_to "⇦", user_path(date: @first_day.prev_month), class: "btn btn-info btn-sm", style: "margin-right: 10px;" %>
+        <% if current_user?(@user) %>
+          <%= link_to "⇦", user_path(date: @first_day.prev_month), class: "btn btn-info btn-sm", style: "margin-right: 10px;" %>
+        <% end %>
         <%= @first_day.present? ? l(@first_day, format: :middle) : "日付取得エラー" %> 時間管理表
-        <%= link_to "⇨", user_path(date: @first_day.next_month), class: "btn btn-info btn-sm", style: "margin-left: 10px;" %>
+        <% if current_user?(@user) %>
+          <%= link_to "⇨", user_path(date: @first_day.next_month), class: "btn btn-info btn-sm", style: "margin-left: 10px;" %>
+        <% end %>
       </td>
       <td>指定勤務時間：<%= format_basic_info(@user.work_time) %></td>
       <td>基本時間：<%= format_basic_info(@user.basic_time) %></td>
@@ -22,26 +26,76 @@
   </table>
 </div>
 
+<!-- マネージャー向けお知らせセクション -->
+<% if current_user.manager? && current_user?(@user) %>
+  <div class="approval-notifications" style="margin-top: 20px;" data-controller="modal">
+    <h4>承認待ち申請</h4>
+
+    <div class="notification-item">
+      <%= link_to monthly_approvals_path, data: { action: "modal#open" }, class: "notification-link" do %>
+        【所属長承認申請のお知らせ】
+        <% if monthly_approvals_count > 0 %>
+          <span class="notification-badge"><%= monthly_approvals_count %>件</span>
+        <% end %>
+      <% end %>
+    </div>
+
+    <div class="notification-item">
+      <%= link_to "#", data: { action: "modal#openDummy", dummy_title: "勤怠変更申請" }, class: "notification-link" do %>
+        【勤怠変更申請のお知らせ】
+        <% if attendance_change_requests_count > 0 %>
+          <span class="notification-badge"><%= attendance_change_requests_count %>件</span>
+        <% end %>
+      <% end %>
+    </div>
+
+    <div class="notification-item">
+      <%= link_to "#", data: { action: "modal#openDummy", dummy_title: "残業申請" }, class: "notification-link" do %>
+        【残業申請のお知らせ】
+        <% if overtime_requests_count > 0 %>
+          <span class="notification-badge"><%= overtime_requests_count %>件</span>
+        <% end %>
+      <% end %>
+    </div>
+
+    <!-- モーダルコンテナ -->
+    <div data-modal-target="container"
+         class="modal"
+         style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1050; background-color: rgba(0,0,0,0.3);"
+         data-action="click->modal#backgroundClick">
+      <div class="modal-dialog" style="position: relative; width: auto; margin: 10px auto; max-width: 800px; top: 50%; transform: translateY(-50%);">
+        <div data-modal-target="content" class="modal-content">
+          <!-- モーダルコンテンツはJavaScriptで挿入 -->
+        </div>
+      </div>
+    </div>
+  </div>
+<% end %>
+
 <!-- 1ヶ月の勤怠編集ボタン（ユーザー情報テーブル下） -->
-<div class="btn-users-show">
-  <%= link_to "1ヶ月の勤怠編集へ", edit_one_month_user_attendances_path(@user, date: @first_day), class: "btn btn-success", data: { turbo: false } %>
-</div>
+<% if current_user?(@user) %>
+  <div class="btn-users-show">
+    <%= link_to "1ヶ月の勤怠編集へ", edit_one_month_user_attendances_path(@user, date: @first_day), class: "btn btn-success", data: { turbo: false } %>
+  </div>
+<% end %>
 
 <!-- 基本情報編集モーダル（Stimulus版） -->
-<div data-controller="modal">
-  <% if current_user.admin? %>
-    <%= link_to "基本情報編集", edit_basic_info_user_path(@user),
-        class: "btn btn-primary",
-        data: { action: "modal#open" } %>
-  <% end %>
+<% if current_user?(@user) %>
+  <div data-controller="modal">
+    <% if current_user.admin? %>
+      <%= link_to "基本情報編集", edit_basic_info_user_path(@user),
+          class: "btn btn-primary",
+          data: { action: "modal#open" } %>
+    <% end %>
   <div data-modal-target="container" class="modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1050; background-color: rgba(0,0,0,0.3);" data-action="click->modal#backgroundClick">
     <div class="modal-dialog" style="position: relative; width: auto; margin: 10px auto; max-width: 600px; top: 50%; transform: translateY(-50%);">
-      <div data-modal-target="content" class="modal-content" style="box-shadow: 0 5px 15px rgba(0,0,0,0.5);">
+      <div data-modal-target="content" class="modal-content">
         <!-- モーダルコンテンツはJavaScriptで挿入 -->
       </div>
     </div>
   </div>
-</div>
+  </div>
+<% end %>
 
 <!-- 統合申請モーダル（Stimulus版） -->
 <div data-controller="modal">
@@ -63,9 +117,11 @@
       <% @attendances.each do |day| %>
       <tr>
         <td class="text-center">
-          <%= link_to "残業申請", new_user_attendance_application_request_path(@user, day),
-              class: "btn btn-primary btn-sm application-request-btn",
-              data: { attendance_id: day.id, action: "modal#open" } %>
+          <% if current_user?(@user) %>
+            <%= link_to "残業申請", new_user_attendance_application_request_path(@user, day),
+                class: "btn btn-primary btn-sm application-request-btn",
+                data: { attendance_id: day.id, action: "modal#open" } %>
+          <% end %>
         </td>
         <td class="text-center"><%= l(day.worked_on, format: :short) %></td>
         <td class="text-center
@@ -74,12 +130,14 @@
           <%= ApplicationController::DAYS_OF_THE_WEEK[day.worked_on.wday] %>
         </td>
         <td class="text-center">
-        <% if btn_text = attendance_state(day) %>
-          <%= button_to "#{btn_text}登録", user_attendance_path(@user, day),
-            method: :patch,
-            params: { attendance: { "#{btn_text == '出勤' ? 'started_at' : 'finished_at'}" => Time.current.strftime("%H:%M") } },
-            class: "btn btn-primary btn-attendance",
-            form_class: "d-inline" %>
+        <% if current_user?(@user) %>
+          <% if btn_text = attendance_state(day) %>
+            <%= button_to "#{btn_text}登録", user_attendance_path(@user, day),
+              method: :patch,
+              params: { attendance: { "#{btn_text == '出勤' ? 'started_at' : 'finished_at'}" => Time.current.strftime("%H:%M") } },
+              class: "btn btn-primary btn-attendance",
+              form_class: "d-inline" %>
+          <% end %>
         <% end %>
         </td>
         <td class="text-center"><%= format_time_15min(day.started_at) if day.started_at.present? %></td>
@@ -123,7 +181,7 @@
        style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1050; background-color: rgba(0,0,0,0.3);"
        data-action="click->modal#backgroundClick">
     <div class="modal-dialog" style="position: relative; width: auto; margin: 10px auto; max-width: 800px; top: 50%; transform: translateY(-50%);">
-      <div data-modal-target="content" class="modal-content" style="box-shadow: 0 5px 15px rgba(0,0,0,0.5);">
+      <div data-modal-target="content" class="modal-content">
         <!-- モーダルコンテンツはJavaScriptで挿入 -->
       </div>
     </div>
@@ -131,24 +189,26 @@
 </div>
 
 <!-- 所属長承認申請セクション -->
-<div class="approval-section" style="margin-top: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 4px;">
-  <h4>所属長承認</h4>
-  <%= form_with model: MonthlyApproval.new, url: user_monthly_approvals_path(@user), local: true, id: "approval-form" do |f| %>
-    <%= f.hidden_field :target_month, value: @first_day %>
+<% if current_user?(@user) %>
+  <div class="approval-section" style="margin-top: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 4px;">
+    <h4>所属長承認</h4>
+    <%= form_with model: MonthlyApproval.new, url: user_monthly_approvals_path(@user), local: true, id: "approval-form" do |f| %>
+      <%= f.hidden_field :target_month, value: @first_day %>
 
-    <div class="form-group">
-      <%= f.label :approver_id, "承認者を選択" %>
-      <%= f.select :approver_id,
-          options_from_collection_for_select(User.where.not(id: @user.id), :id, :name, @user.manager_id),
-          { prompt: "承認者を選択してください" },
-          class: "form-control" %>
-    </div>
+      <div class="form-group">
+        <%= f.label :approver_id, "承認者を選択" %>
+        <%= f.select :approver_id,
+            options_from_collection_for_select(User.where.not(id: @user.id), :id, :name, @user.manager_id),
+            { prompt: "承認者を選択してください" },
+            class: "form-control" %>
+      </div>
 
-    <div class="form-group" style="margin-top: 10px;">
-      <%= f.submit "申請", class: "btn btn-primary" %>
-    </div>
-  <% end %>
-</div>
+      <div class="form-group" style="margin-top: 10px;">
+        <%= f.submit "申請", class: "btn btn-primary" %>
+      </div>
+    <% end %>
+  </div>
+<% end %>
 
 <!-- 所属長承認申請確認ダイアログ -->
 <script>

@@ -8,6 +8,28 @@ export default class extends Controller {
     console.log("Modal controller connected")
   }
 
+  // ダミーモーダルを開く
+  openDummy(event) {
+    event.preventDefault()
+    const title = event.currentTarget.dataset.dummyTitle || '未実装機能'
+
+    const dummyHtml = `
+      <div class="modal-header">
+        <h4 class="modal-title">${title}</h4>
+        <button type="button" class="close" data-action="modal#close">×</button>
+      </div>
+      <div class="modal-body">
+        <p>この機能は現在未実装です。</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-action="modal#close">閉じる</button>
+      </div>
+    `
+
+    this.contentTarget.innerHTML = dummyHtml
+    this.containerTarget.style.display = 'block'
+  }
+
   // モーダルを開く
   async open(event) {
     event.preventDefault()
