@@ -7,6 +7,12 @@ Rails.application.routes.draw do
   post '/login', to: 'sessions#create'
   delete '/logout', to: 'sessions#destroy'
 
+  resources :monthly_approvals, only: [:index] do
+    collection do
+      patch :bulk_update
+    end
+  end
+
   resources :users do
     member do
       get 'edit_basic_info'
