@@ -307,4 +307,88 @@ RSpec.describe "ApplicationRequests", type: :request do
       end
     end
   end
+
+  describe "GET /users/:user_id/attendances/:attendance_id/application_requests/new" do
+    context "JavaScriptモーダル機能統合テスト" do
+      it "ユーザー詳細ページにモーダル開くリンクが表示される" do
+        get user_path(user)
+        expect(response.body).to include('残業申請')
+        expect(response.body).to include('data-action="modal#open"')
+      end
+
+      it "モーダル用のコンテナが存在する" do
+        get user_path(user)
+        expect(response.body).to include('data-controller="modal"')
+        expect(response.body).to include('data-modal-target="container"')
+      end
+
+      it "申請ページがAJAXレスポンスに対応している" do
+        get new_user_attendance_application_request_path(user, attendance),
+            headers: { "X-Requested-With" => "XMLHttpRequest" }
+        expect(response).to have_http_status(:success)
+        expect(response.body).to include('勤怠変更・残業申請')
+      end
+
+      it "フォームに確認ダイアログ属性が設定されている" do
+        get new_user_attendance_application_request_path(user, attendance)
+        expect(response.body).to include('data-confirm="true"')
+        expect(response.body).to include('data-confirm-message="この内容で申請してよろしいですか？"')
+      end
+
+      it "閉じるボタンがStimulus actionを使用している" do
+        get new_user_attendance_application_request_path(user, attendance)
+        expect(response.body).to include('data-action="modal#close"')
+      end
+
+      it "モーダルコンテンツにラッパーdivが含まれていない（二重モーダル防止）" do
+        get new_user_attendance_application_request_path(user, attendance)
+        # modal-header, modal-body, modal-footerは存在するが
+        # modal-dialog, modal-contentのラッパーは含まれない
+        expect(response.body).to include('class="modal-header"')
+        expect(response.body).to include('class="modal-body"')
+        expect(response.body).to include('class="modal-footer"')
+        # ラッパーdivは親ビュー側にのみ存在し、コンテンツビューには無い
+        expect(response.body).not_to match(/<div[^>]*class="modal-dialog"/)
+        expect(response.body).not_to match(/<div[^>]*class="modal-content"[^>]*style=/)
+      end
+    end
+
+    context "UI要素テスト" do
+      it "勤怠変更セクションに全ての入力フィールドが表示される" do
+        get new_user_attendance_application_request_path(user, attendance)
+
+        # 勤怠変更セクション
+        expect(response.body).to include('変更前 出社時間')
+        expect(response.body).to include('変更前 退社時間')
+        expect(response.body).to include('変更後 出社時間')
+        expect(response.body).to include('変更後 退社時間')
+        expect(response.body).to include('変更理由')
+      end
+
+      it "残業申請セクションに全ての入力フィールドが表示される" do
+        get new_user_attendance_application_request_path(user, attendance)
+
+        # 残業申請セクション
+        expect(response.body).to include('終了予定時間')
+        expect(response.body).to include('業務内容')
+      end
+
+      it "承認者選択ドロップダウンが表示される" do
+        get new_user_attendance_application_request_path(user, attendance)
+        expect(response.body).to include('承認者')
+        expect(response.body).to include('select')
+      end
+
+      it "モーダルタイトルが表示される" do
+        get new_user_attendance_application_request_path(user, attendance)
+        expect(response.body).to include('勤怠変更・残業申請')
+      end
+
+      it "申請ボタンとキャンセルボタンが表示される" do
+        get new_user_attendance_application_request_path(user, attendance)
+        expect(response.body).to include('申請')
+        expect(response.body).to include('キャンセル')
+      end
+    end
+  end
 end
