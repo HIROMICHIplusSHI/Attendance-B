@@ -44,6 +44,10 @@
   </div>
 </div>
 
+<!-- 申請モーダルコンテナ -->
+<div id="application-request-modal-container" class="modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1050; background-color: rgba(0,0,0,0.3);">
+</div>
+
 <!-- 基本情報編集モーダル用JavaScript -->
 <script>
 // Turbo対応の基本情報モーダル初期化関数
@@ -247,6 +251,130 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // グローバルに公開（デバッグ用）
 window.closeModal = closeModal;
+
+// 残業申請モーダル処理
+document.addEventListener('turbo:load', function() {
+  initializeApplicationRequestModal();
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+  initializeApplicationRequestModal();
+});
+
+function initializeApplicationRequestModal() {
+  // 残業申請ボタンのクリックイベント
+  document.querySelectorAll('.application-request-btn').forEach(function(button) {
+    button.removeEventListener('click', handleApplicationModalClick);
+    button.addEventListener('click', handleApplicationModalClick);
+  });
+
+  // モーダル背景クリックで閉じる
+  const modalContainer = document.getElementById('application-request-modal-container');
+  if (modalContainer) {
+    modalContainer.removeEventListener('click', handleApplicationModalBackgroundClick);
+    modalContainer.addEventListener('click', handleApplicationModalBackgroundClick);
+  }
+}
+
+function handleApplicationModalClick(e) {
+  e.preventDefault();
+  openApplicationModal(this.href);
+}
+
+function handleApplicationModalBackgroundClick(e) {
+  const modalContainer = document.getElementById('application-request-modal-container');
+  if (e.target === modalContainer) {
+    closeApplicationModal();
+  }
+}
+
+function openApplicationModal(url) {
+  const modalContainer = document.getElementById('application-request-modal-container');
+  const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+  fetch(url, {
+    headers: {
+      'Accept': 'text/html',
+      'X-Requested-With': 'XMLHttpRequest',
+      'X-CSRF-Token': csrfToken
+    }
+  })
+  .then(response => response.text())
+  .then(html => {
+    modalContainer.innerHTML = html;
+    modalContainer.style.display = 'block';
+
+    // フォーム送信イベントをハンドリング
+    const form = modalContainer.querySelector('form');
+    if (form) {
+      const submitHandler = function(e) {
+        e.preventDefault();
+        submitApplicationModalForm(form);
+      };
+      form._submitHandler = submitHandler;
+      form.addEventListener('submit', submitHandler);
+    }
+  })
+  .catch(error => {
+    console.error('Error loading modal:', error);
+    alert('モーダルの読み込みに失敗しました');
+  });
+}
+
+function submitApplicationModalForm(form) {
+  const formData = new FormData(form);
+  const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+  fetch(form.action, {
+    method: 'POST',
+    body: formData,
+    headers: {
+      'X-Requested-With': 'XMLHttpRequest',
+      'X-CSRF-Token': csrfToken,
+      'Accept': 'text/html'
+    }
+  })
+  .then(response => {
+    return response.text().then(html => {
+      if (response.ok) {
+        // バリデーション成功時は確認ダイアログを表示
+        if (confirm('この内容で申請してよろしいですか？')) {
+          // 確認OKの場合、通常のフォーム送信を行う（Railsのリダイレクトでflashを表示）
+          form.removeEventListener('submit', form._submitHandler);
+          form.submit();
+        }
+      } else {
+        // エラー時はモーダルを更新してバリデーションエラーを表示（確認ダイアログなし）
+        const modalContainer = document.getElementById('application-request-modal-container');
+        modalContainer.innerHTML = html;
+
+        // 再度フォーム送信イベントを設定
+        const newForm = modalContainer.querySelector('form');
+        if (newForm) {
+          const submitHandler = function(e) {
+            e.preventDefault();
+            submitApplicationModalForm(newForm);
+          };
+          newForm._submitHandler = submitHandler;
+          newForm.addEventListener('submit', submitHandler);
+        }
+      }
+    });
+  })
+  .catch(error => {
+    console.error('Form submission error:', error);
+    alert('申請の送信に失敗しました');
+  });
+}
+
+function closeApplicationModal() {
+  const modalContainer = document.getElementById('application-request-modal-container');
+  modalContainer.style.display = 'none';
+  modalContainer.innerHTML = '';
+}
+
+// グローバルに公開
+window.closeApplicationModal = closeApplicationModal;
 </script>
 
 <div>
@@ -256,6 +384,7 @@ window.closeModal = closeModal;
   <table class="table table-bordered table-condensed table-hover text-center" id="table-attendances">
     <thead>
       <tr>
+        <th class="text-center">残業申請</th>
         <th class="text-center">日付</th>
         <th class="text-center">曜日</th>
         <th class="text-center">勤怠登録</th>
@@ -268,6 +397,12 @@ window.closeModal = closeModal;
     <tbody>
       <% @attendances.each do |day| %>
       <tr>
+        <td class="text-center">
+          <%= link_to "残業申請", new_user_attendance_application_request_path(@user, day),
+              class: "btn btn-primary btn-sm application-request-btn",
+              data: { attendance_id: day.id },
+              remote: true %>
+        </td>
         <td class="text-center"><%= l(day.worked_on, format: :short) %></td>
         <td class="text-center
           <%= 'text-primary' if day.worked_on.wday == 6 %>

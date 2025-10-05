@@ -4,7 +4,6 @@ class AttendanceChangeRequest < ApplicationRecord
   belongs_to :approver, class_name: 'User'
 
   validates :attendance, :requester, :approver, presence: true
-  validates :original_started_at, :original_finished_at, presence: true
   validates :requested_started_at, :requested_finished_at, presence: true
 
   enum status: { pending: 0, approved: 1, rejected: 2 }

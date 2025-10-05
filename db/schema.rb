@@ -10,18 +10,19 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2025_10_03_073452) do
+ActiveRecord::Schema[7.1].define(version: 2025_10_04_134513) do
   create_table "attendance_change_requests", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.bigint "attendance_id", null: false
     t.bigint "requester_id", null: false
     t.bigint "approver_id", null: false
-    t.datetime "original_started_at", null: false
-    t.datetime "original_finished_at", null: false
+    t.datetime "original_started_at"
+    t.datetime "original_finished_at"
     t.datetime "requested_started_at", null: false
     t.datetime "requested_finished_at", null: false
     t.integer "status", default: 0, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.text "change_reason"
     t.index ["approver_id"], name: "index_attendance_change_requests_on_approver_id"
     t.index ["attendance_id"], name: "index_attendance_change_requests_on_attendance_id"
     t.index ["requester_id"], name: "index_attendance_change_requests_on_requester_id"
