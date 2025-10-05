@@ -102,20 +102,41 @@
   <!-- クローン元完全再現：7列シンプル勤怠テーブル -->
   <table class="table table-bordered table-condensed table-hover text-center" id="table-attendances">
     <thead>
+      <!-- 1段目：大グループ -->
       <tr>
-        <th class="text-center">残業申請</th>
-        <th class="text-center">日付</th>
-        <th class="text-center">曜日</th>
-        <th class="text-center">勤怠登録</th>
-        <th class="text-center">出勤時間</th>
-        <th class="text-center">退勤時間</th>
-        <th class="text-center">在社時間</th>
-        <th class="text-center">備考</th>
+        <th rowspan="3" class="text-center">残業申請</th>
+        <th rowspan="3" class="text-center">日付</th>
+        <th rowspan="3" class="text-center">曜日</th>
+        <th colspan="7" class="text-center">【実績】</th>
+        <th colspan="5" class="text-center">所定外勤務</th>
+      </tr>
+      <!-- 2段目：中グループ -->
+      <tr>
+        <th colspan="3" class="text-center">出社</th>
+        <th colspan="2" class="text-center">退社</th>
+        <th rowspan="2" class="text-center">在社時間</th>
+        <th rowspan="2" class="text-center">備考</th>
+        <th colspan="2" class="text-center">終了予定時間</th>
+        <th rowspan="2" class="text-center">時間外時間</th>
+        <th rowspan="2" class="text-center">業務処理内容</th>
+        <th rowspan="2" class="text-center">指示者確認印</th>
+      </tr>
+      <!-- 3段目：詳細カラム -->
+      <tr>
+        <th class="text-center" style="width: 50px;">時</th>
+        <th class="text-center" style="width: 50px;">分</th>
+        <th class="text-center" style="width: 100px;">勤怠登録</th>
+        <th class="text-center" style="width: 50px;">時</th>
+        <th class="text-center" style="width: 50px;">分</th>
+        <th class="text-center" style="width: 50px;">時</th>
+        <th class="text-center" style="width: 50px;">分</th>
       </tr>
     </thead>
     <tbody>
       <% @attendances.each do |day| %>
+      <% overtime = @overtime_requests&.dig(day.worked_on) %>
       <tr>
+        <!-- 残業申請 -->
         <td class="text-center">
           <% if current_user?(@user) %>
             <%= link_to "残業申請", new_user_attendance_application_request_path(@user, day),
@@ -123,46 +144,114 @@
                 data: { attendance_id: day.id, action: "modal#open" } %>
           <% end %>
         </td>
+
+        <!-- 日付 -->
         <td class="text-center"><%= l(day.worked_on, format: :short) %></td>
+
+        <!-- 曜日 -->
         <td class="text-center
           <%= 'text-primary' if day.worked_on.wday == 6 %>
           <%= 'text-danger' if day.worked_on.wday == 0 %>">
           <%= ApplicationController::DAYS_OF_THE_WEEK[day.worked_on.wday] %>
         </td>
+
+        <!-- 【実績】出社：時 -->
         <td class="text-center">
-        <% if current_user?(@user) %>
-          <% if btn_text = attendance_state(day) %>
-            <%= button_to "#{btn_text}登録", user_attendance_path(@user, day),
-              method: :patch,
-              params: { attendance: { "#{btn_text == '出勤' ? 'started_at' : 'finished_at'}" => Time.current.strftime("%H:%M") } },
-              class: "btn btn-primary btn-attendance",
-              form_class: "d-inline" %>
-          <% end %>
-        <% end %>
+          <%= day.started_at&.strftime("%H") %>
         </td>
-        <td class="text-center"><%= format_time_15min(day.started_at) if day.started_at.present? %></td>
-        <td class="text-center"><%= format_time_15min(day.finished_at) if day.finished_at.present? %></td>
+
+        <!-- 【実績】出社：分 -->
+        <td class="text-center">
+          <%= day.started_at&.strftime("%M") %>
+        </td>
+
+        <!-- 【実績】出社：勤怠登録 -->
+        <td class="text-center">
+          <% if current_user?(@user) %>
+            <% if btn_text = attendance_state(day) %>
+              <%= button_to "#{btn_text}登録", user_attendance_path(@user, day),
+                method: :patch,
+                params: { attendance: { "#{btn_text == '出勤' ? 'started_at' : 'finished_at'}" => Time.current.strftime("%H:%M") } },
+                class: "btn btn-primary btn-attendance",
+                form_class: "d-inline" %>
+            <% end %>
+          <% end %>
+        </td>
+
+        <!-- 【実績】退社：時 -->
+        <td class="text-center">
+          <%= day.finished_at&.strftime("%H") %>
+        </td>
+
+        <!-- 【実績】退社：分 -->
+        <td class="text-center">
+          <%= day.finished_at&.strftime("%M") %>
+        </td>
+
+        <!-- 【実績】在社時間 -->
         <td class="text-center">
           <% if day.started_at.present? && day.finished_at.present? %>
             <%= working_times(day.started_at, day.finished_at) %>
           <% end %>
         </td>
+
+        <!-- 【実績】備考 -->
         <td class="text-center"><%= day.note %></td>
+
+        <!-- 所定外勤務：終了予定時間：時 -->
+        <td class="text-center">
+          <%= overtime&.estimated_end_time&.strftime("%H") %>
+        </td>
+
+        <!-- 所定外勤務：終了予定時間：分 -->
+        <td class="text-center">
+          <%= overtime&.estimated_end_time&.strftime("%M") %>
+        </td>
+
+        <!-- 所定外勤務：時間外時間 -->
+        <td class="text-center">
+          <% if day.finished_at.present? && overtime&.estimated_end_time.present? %>
+            <% estimated_time = Time.zone.parse("#{day.worked_on} #{overtime.estimated_end_time.strftime('%H:%M')}") %>
+            <% overtime_hours = ((estimated_time - day.finished_at) / 3600.0).round(2) %>
+            <%= format("%.2f", overtime_hours) %>
+          <% end %>
+        </td>
+
+        <!-- 所定外勤務：業務処理内容 -->
+        <td class="text-center"><%= overtime&.business_content %></td>
+
+        <!-- 所定外勤務：指示者確認印 -->
+        <td class="text-center">
+          <% if overtime.present? %>
+            <div>
+              <%= overtime.approver.name %>
+              <% case overtime.status %>
+              <% when 'approved' %>
+                <span class="badge bg-success">承認済</span>
+              <% when 'pending' %>
+                <span class="badge bg-warning">申請中</span>
+              <% when 'rejected' %>
+                <span class="badge bg-danger">否認</span>
+              <% end %>
+            </div>
+          <% end %>
+        </td>
       </tr>
       <% end %>
     </tbody>
     <!-- クローン元完全再現：統計フッター -->
     <tfoot>
       <tr>
-        <td colspan="2" class="text-center">累計日数</td>
-        <td colspan="2" class="text-center">総合勤務時間</td>
-        <td colspan="2" class="text-center">累計在社時間</td>
-        <td rowspan="2" class="text-center"></td>
+        <td colspan="3" class="text-center">累計日数</td>
+        <td colspan="4" class="text-center">総合勤務時間</td>
+        <td colspan="3" class="text-center">累計在社時間</td>
+        <td colspan="3" class="text-center">累計残業時間</td>
+        <td colspan="2" class="text-center">所属長承認</td>
       </tr>
       <tr>
-        <td colspan="2" class="text-center"><%= @attendances.count %></td>
-        <td colspan="2" class="text-center"><%= format_basic_info(@user.work_time).to_f * @worked_sum %></td>
-        <td colspan="2" class="text-center">
+        <td colspan="3" class="text-center"><%= @attendances.count { |day| day.started_at.present? } %></td>
+        <td colspan="4" class="text-center"><%= format_basic_info(@user.work_time).to_f * @worked_sum %></td>
+        <td colspan="3" class="text-center">
           <% @total_working_times = @total_working_times.to_f %>
           <% @attendances.each do |day| %>
             <% if day.started_at.present? && day.finished_at.present? %>
@@ -170,6 +259,48 @@
             <% end %>
           <% end %>
           <%= format("%.2f", @total_working_times) %>
+        </td>
+        <td colspan="3" class="text-center">
+          <% total_overtime = 0.0 %>
+          <% @overtime_requests&.each do |date, overtime| %>
+            <% day = @attendances.find { |a| a.worked_on == date } %>
+            <% if day&.finished_at.present? && overtime&.estimated_end_time.present? %>
+              <% estimated_time = Time.zone.parse("#{day.worked_on} #{overtime.estimated_end_time.strftime('%H:%M')}") %>
+              <% total_overtime += ((estimated_time - day.finished_at) / 3600.0) %>
+            <% end %>
+          <% end %>
+          <%= format("%.2f", total_overtime) %>
+        </td>
+        <td colspan="2" class="text-center">
+          <% approval = MonthlyApproval.find_by(user: @user, target_month: @first_day) %>
+          <% if approval.present? %>
+            <div>
+              <%= approval.approver.name %>
+              <% case approval.status %>
+              <% when 'approved' %>
+                <span class="badge bg-success">承認済</span>
+              <% when 'pending' %>
+                <span class="badge bg-warning">申請中</span>
+              <% when 'rejected' %>
+                <span class="badge bg-danger">否認</span>
+              <% end %>
+            </div>
+          <% else %>
+            <span class="text-muted">未申請</span>
+          <% end %>
+          <% if current_user?(@user) %>
+            <div style="margin-top: 10px;">
+              <%= form_with model: MonthlyApproval.new, url: user_monthly_approvals_path(@user), local: true, html: { style: "display: flex; flex-direction: column; gap: 8px; align-items: center;" } do |f| %>
+                <%= f.hidden_field :target_month, value: @first_day %>
+                <%= f.select :approver_id,
+                    options_from_collection_for_select(User.where.not(id: @user.id), :id, :name, @user.manager_id),
+                    { prompt: "承認者を選択" },
+                    class: "form-select", style: "width: 200px;" %>
+                <%= f.submit approval.present? ? "再申請" : "申請", class: "btn btn-primary", style: "width: 200px;",
+                    data: { confirm: "承認者に勤怠を#{approval.present? ? '再' : ''}申請します。よろしいですか？" } %>
+              <% end %>
+            </div>
+          <% end %>
         </td>
       </tr>
     </tfoot>
@@ -188,65 +319,6 @@
   </div>
 </div>
 
-<!-- 所属長承認申請セクション -->
-<% if current_user?(@user) %>
-  <div class="approval-section" style="margin-top: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 4px;">
-    <h4>所属長承認</h4>
-    <%= form_with model: MonthlyApproval.new, url: user_monthly_approvals_path(@user), local: true, id: "approval-form" do |f| %>
-      <%= f.hidden_field :target_month, value: @first_day %>
-
-      <div class="form-group">
-        <%= f.label :approver_id, "承認者を選択" %>
-        <%= f.select :approver_id,
-            options_from_collection_for_select(User.where.not(id: @user.id), :id, :name, @user.manager_id),
-            { prompt: "承認者を選択してください" },
-            class: "form-control" %>
-      </div>
-
-      <div class="form-group" style="margin-top: 10px;">
-        <%= f.submit "申請", class: "btn btn-primary" %>
-      </div>
-    <% end %>
-  </div>
-<% end %>
-
-<!-- 所属長承認申請確認ダイアログ -->
-<script>
-document.addEventListener('turbo:load', function() {
-  initializeApprovalConfirmation();
-});
-
-document.addEventListener('DOMContentLoaded', function() {
-  initializeApprovalConfirmation();
-});
-
-function initializeApprovalConfirmation() {
-  const form = document.getElementById('approval-form');
-
-  if (form) {
-    form.removeEventListener('submit', handleApprovalSubmit);
-    form.addEventListener('submit', handleApprovalSubmit);
-  }
-}
-
-function handleApprovalSubmit(e) {
-  const approverSelect = document.querySelector('#approval-form select[name="monthly_approval[approver_id]"]');
-  const approverName = approverSelect.options[approverSelect.selectedIndex].text;
-
-  if (approverSelect.value === '') {
-    alert('承認者を選択してください。');
-    e.preventDefault();
-    return false;
-  }
-
-  const message = `${approverName} に勤怠を申請します。よろしいですか？`;
-
-  if (!confirm(message)) {
-    e.preventDefault();
-    return false;
-  }
-}
-</script>
 
 <!-- 土日色分けスタイル -->
 <style>

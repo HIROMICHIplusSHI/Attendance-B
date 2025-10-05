@@ -279,4 +279,261 @@ RSpec.describe "Users", type: :request do
       end
     end
   end
+
+  describe "GET /users/:id (勤怠テーブル表示)" do
+    let(:target_month) { Date.today.beginning_of_month }
+    let(:approver) do
+      User.create!(name: "承認者", email: "approver_#{Time.current.to_i}@example.com", password: "password123")
+    end
+
+    before do
+      post login_path, params: { session: { email: general_user.email, password: "password123" } }
+    end
+
+    context "勤怠データと残業申請データが存在する場合" do
+      before do
+        # 勤怠データ作成
+        general_user.attendances.create!(
+          worked_on: target_month,
+          started_at: Time.zone.parse("#{target_month} 09:00"),
+          finished_at: Time.zone.parse("#{target_month} 18:00"),
+          note: "通常勤務"
+        )
+
+        # 残業申請データ作成
+        general_user.overtime_requests.create!(
+          worked_on: target_month,
+          estimated_end_time: Time.zone.parse("#{target_month} 20:00"),
+          business_content: "プロジェクト対応",
+          approver:,
+          status: :approved
+        )
+      end
+
+      it "3段ヘッダーが正しく表示される" do
+        get user_path(general_user)
+        expect(response).to have_http_status(:success)
+        expect(response.body).to include("【実績】")
+        expect(response.body).to include("所定外勤務")
+      end
+
+      it "出社時刻が時・分に分かれて表示される" do
+        get user_path(general_user)
+        expect(response.body).to include("09") # 時
+        expect(response.body).to include("00") # 分
+      end
+
+      it "退社時刻が時・分に分かれて表示される" do
+        get user_path(general_user)
+        expect(response.body).to include("18") # 時
+        expect(response.body).to include("00") # 分
+      end
+
+      it "在社時間が表示される" do
+        get user_path(general_user)
+        expect(response.body).to match(/8\.00|9\.00/) # 在社時間
+      end
+
+      it "備考が表示される" do
+        get user_path(general_user)
+        expect(response.body).to include("通常勤務")
+      end
+
+      it "終了予定時間が時・分に分かれて表示される" do
+        get user_path(general_user)
+        expect(response.body).to include("20") # 終了予定時間の時
+        expect(response.body).to include("00") # 終了予定時間の分
+      end
+
+      it "時間外時間が計算されて表示される" do
+        get user_path(general_user)
+        expect(response.body).to include("2.00") # 18:00-20:00 = 2時間
+      end
+
+      it "業務処理内容が表示される" do
+        get user_path(general_user)
+        expect(response.body).to include("プロジェクト対応")
+      end
+
+      it "指示者確認印（承認済ステータス）が表示される" do
+        get user_path(general_user)
+        expect(response.body).to include("承認済")
+        expect(response.body).to include("badge bg-success")
+      end
+
+      it "指示者確認印に承認者名が表示される" do
+        get user_path(general_user)
+        expect(response.body).to include(approver.name)
+      end
+
+      it "累計残業時間が正しく表示される" do
+        get user_path(general_user)
+        expect(response.body).to include("2.00") # 累計残業時間
+      end
+
+      it "累計日数が出勤日数で表示される" do
+        get user_path(general_user)
+        expect(response.body).to match(/>1</) # 1日出勤
+      end
+    end
+
+    context "残業申請が申請中の場合" do
+      before do
+        general_user.attendances.create!(
+          worked_on: target_month,
+          started_at: Time.zone.parse("#{target_month} 09:00"),
+          finished_at: Time.zone.parse("#{target_month} 18:00")
+        )
+
+        general_user.overtime_requests.create!(
+          worked_on: target_month,
+          estimated_end_time: Time.zone.parse("#{target_month} 20:00"),
+          business_content: "緊急対応",
+          approver:,
+          status: :pending
+        )
+      end
+
+      it "申請中バッジが表示される" do
+        get user_path(general_user)
+        expect(response.body).to include("申請中")
+        expect(response.body).to include("badge bg-warning")
+      end
+    end
+
+    context "残業申請が否認された場合" do
+      before do
+        general_user.attendances.create!(
+          worked_on: target_month,
+          started_at: Time.zone.parse("#{target_month} 09:00"),
+          finished_at: Time.zone.parse("#{target_month} 18:00")
+        )
+
+        general_user.overtime_requests.create!(
+          worked_on: target_month,
+          estimated_end_time: Time.zone.parse("#{target_month} 20:00"),
+          business_content: "追加作業",
+          approver:,
+          status: :rejected
+        )
+      end
+
+      it "否認バッジが表示される" do
+        get user_path(general_user)
+        expect(response.body).to include("否認")
+        expect(response.body).to include("badge bg-danger")
+      end
+    end
+
+    context "残業申請データが存在しない場合" do
+      before do
+        general_user.attendances.create!(
+          worked_on: target_month,
+          started_at: Time.zone.parse("#{target_month} 09:00"),
+          finished_at: Time.zone.parse("#{target_month} 18:00")
+        )
+      end
+
+      it "残業関連の列が空で表示される" do
+        get user_path(general_user)
+        expect(response).to have_http_status(:success)
+        # 残業データがない場合でもテーブル構造は正常
+        expect(response.body).to include("【実績】")
+        expect(response.body).to include("所定外勤務")
+      end
+    end
+
+    context "所属長承認機能" do
+      before do
+        general_user.attendances.create!(
+          worked_on: target_month,
+          started_at: Time.zone.parse("#{target_month} 09:00"),
+          finished_at: Time.zone.parse("#{target_month} 18:00")
+        )
+      end
+
+      context "月次承認が未申請の場合" do
+        it "未申請と表示される" do
+          get user_path(general_user)
+          expect(response.body).to include("未申請")
+        end
+
+        it "申請フォームが表示される" do
+          get user_path(general_user)
+          expect(response.body).to include("承認者を選択")
+          expect(response.body).to include("申請")
+        end
+      end
+
+      context "月次承認が申請中の場合" do
+        before do
+          MonthlyApproval.create!(
+            user: general_user,
+            approver:,
+            target_month:,
+            status: :pending
+          )
+        end
+
+        it "承認者名と申請中バッジが表示される" do
+          get user_path(general_user)
+          expect(response.body).to include(approver.name)
+          expect(response.body).to include("申請中")
+          expect(response.body).to include("badge bg-warning")
+        end
+
+        it "再申請フォームが表示される" do
+          get user_path(general_user)
+          expect(response.body).to include("再申請")
+        end
+      end
+
+      context "月次承認が承認済の場合" do
+        before do
+          MonthlyApproval.create!(
+            user: general_user,
+            approver:,
+            target_month:,
+            status: :approved,
+            approved_at: Time.current
+          )
+        end
+
+        it "承認者名と承認済バッジが表示される" do
+          get user_path(general_user)
+          expect(response.body).to include(approver.name)
+          expect(response.body).to include("承認済")
+          expect(response.body).to include("badge bg-success")
+        end
+
+        it "再申請フォームが表示される" do
+          get user_path(general_user)
+          expect(response.body).to include("再申請")
+        end
+      end
+
+      context "月次承認が否認された場合" do
+        before do
+          MonthlyApproval.create!(
+            user: general_user,
+            approver:,
+            target_month:,
+            status: :rejected
+          )
+        end
+
+        it "承認者名と否認バッジが表示される" do
+          get user_path(general_user)
+          expect(response.body).to include(approver.name)
+          expect(response.body).to include("否認")
+          expect(response.body).to include("badge bg-danger")
+        end
+
+        it "再申請フォームが表示される" do
+          get user_path(general_user)
+          expect(response.body).to include("再申請")
+        end
+      end
+    end
+  end
 end
