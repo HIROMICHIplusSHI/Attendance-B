@@ -24,6 +24,13 @@ RSpec.describe MonthlyApproval, type: :model do
     end
 
     it '有効な月次承認が作成できること' do
+      # 勤怠データを作成
+      user.attendances.create!(
+        worked_on: Date.today.beginning_of_month,
+        started_at: Time.zone.parse("#{Date.today.beginning_of_month} 09:00"),
+        finished_at: Time.zone.parse("#{Date.today.beginning_of_month} 18:00")
+      )
+
       expect(approval).to be_valid
     end
 
@@ -43,6 +50,13 @@ RSpec.describe MonthlyApproval, type: :model do
     end
 
     it '同じユーザー・月の組み合わせは一意であること' do
+      # 勤怠データを作成
+      user.attendances.create!(
+        worked_on: Date.today.beginning_of_month,
+        started_at: Time.zone.parse("#{Date.today.beginning_of_month} 09:00"),
+        finished_at: Time.zone.parse("#{Date.today.beginning_of_month} 18:00")
+      )
+
       MonthlyApproval.create!(
         user:,
         approver:,
@@ -57,12 +71,38 @@ RSpec.describe MonthlyApproval, type: :model do
 
       expect(duplicate).not_to be_valid
     end
+
+    context '勤怠データのバリデーション' do
+      it '勤怠データが存在しない場合は無効であること' do
+        # 勤怠データなしの状態
+        expect(approval).not_to be_valid
+        expect(approval.errors[:base]).to include('勤怠データが登録されていません。出勤・退勤を登録してから申請してください。')
+      end
+
+      it '勤怠データが存在する場合は有効であること' do
+        # 勤怠データを作成
+        user.attendances.create!(
+          worked_on: Date.today.beginning_of_month,
+          started_at: Time.zone.parse("#{Date.today.beginning_of_month} 09:00"),
+          finished_at: Time.zone.parse("#{Date.today.beginning_of_month} 18:00")
+        )
+
+        expect(approval).to be_valid
+      end
+    end
   end
 
   describe 'ステータス管理' do
     let(:user) { User.create(name: "一般", email: "user@example.com", password: "password") }
     let(:approver) { User.create(name: "承認者", email: "approver@example.com", password: "password") }
     let(:approval) do
+      # 勤怠データを作成
+      user.attendances.create!(
+        worked_on: Date.today.beginning_of_month,
+        started_at: Time.zone.parse("#{Date.today.beginning_of_month} 09:00"),
+        finished_at: Time.zone.parse("#{Date.today.beginning_of_month} 18:00")
+      )
+
       MonthlyApproval.create(
         user:,
         approver:,
@@ -89,6 +129,13 @@ RSpec.describe MonthlyApproval, type: :model do
     let(:user) { User.create(name: "一般", email: "user@example.com", password: "password") }
     let(:approver) { User.create(name: "承認者", email: "approver@example.com", password: "password") }
     let(:approval) do
+      # 勤怠データを作成
+      user.attendances.create!(
+        worked_on: Date.today.beginning_of_month,
+        started_at: Time.zone.parse("#{Date.today.beginning_of_month} 09:00"),
+        finished_at: Time.zone.parse("#{Date.today.beginning_of_month} 18:00")
+      )
+
       MonthlyApproval.create(
         user:,
         approver:,

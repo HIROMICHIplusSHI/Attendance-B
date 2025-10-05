@@ -244,14 +244,15 @@ RSpec.describe "BasicInfoModal", type: :request do
       post login_path, params: { session: { email: admin_user.email, password: "password123" } }
     end
 
-    it "ユーザー詳細ページにモーダル開くリンクが表示される" do
-      get user_path(general_user)
+    it "ユーザー詳細ページにモーダ開くリンクが表示される" do
+      # 管理者が自分のページを見る場合のみ基本情報編集ボタンが表示される
+      get user_path(admin_user)
       expect(response.body).to include('基本情報編集')
       expect(response.body).to include('data-action="modal#open"')
     end
 
     it "モーダル用のコンテナが存在する" do
-      get user_path(general_user)
+      get user_path(admin_user)
       expect(response.body).to include('data-controller="modal"')
       expect(response.body).to include('data-modal-target="container"')
     end
@@ -274,7 +275,7 @@ RSpec.describe "BasicInfoModal", type: :request do
     end
 
     it "モーダルコンテンツにラッパーdivが含まれていない（二重モーダル防止）" do
-      get edit_basic_info_user_path(general_user)
+      get edit_basic_info_user_path(general_user), headers: { "X-Requested-With" => "XMLHttpRequest" }
       # modal-header, modal-body, modal-footerは存在するが
       # modal-dialog, modal-contentのラッパーは含まれない
       expect(response.body).to include('class="modal-header"')
