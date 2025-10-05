@@ -12,31 +12,14 @@ class MonthlyApprovalsController < ApplicationController
   end
 
   def bulk_update
-    approval_params = params[:approvals] || {}
-    selected_approvals = approval_params.select { |_id, attrs| attrs[:selected] == '1' }
+    selected_approvals = extract_selected_approvals
 
-    if selected_approvals.empty?
-      @approvals = MonthlyApproval.pending.where(approver: current_user)
-      flash.now[:alert] = '承認する項目を選択してください'
-      render :index, layout: false, status: :unprocessable_entity
-      return
-    end
+    return render_no_selection_error if selected_approvals.empty?
 
-    MonthlyApproval.transaction do
-      selected_approvals.each do |id, attrs|
-        approval = MonthlyApproval.find_by(id:, approver: current_user)
-        next unless approval
-
-        approval.update!(status: attrs[:status])
-      end
-    end
-
-    flash[:success] = '承認処理が完了しました'
-    redirect_to user_path(current_user)
+    process_bulk_update(selected_approvals)
+    handle_bulk_update_success
   rescue ActiveRecord::RecordInvalid => e
-    @approvals = MonthlyApproval.pending.where(approver: current_user)
-    flash.now[:alert] = "エラーが発生しました: #{e.message}"
-    render :index, layout: false, status: :unprocessable_entity
+    handle_bulk_update_error(e)
   end
 
   def create
@@ -80,5 +63,38 @@ class MonthlyApprovalsController < ApplicationController
     return if current_user.manager?
 
     redirect_to root_path, alert: '管理者権限が必要です'
+  end
+
+  def extract_selected_approvals
+    approval_params = params[:approvals] || {}
+    approval_params.select { |_id, attrs| attrs[:selected] == '1' }
+  end
+
+  def render_no_selection_error
+    @approvals = MonthlyApproval.pending.where(approver: current_user)
+    flash.now[:alert] = '承認する項目を選択してください'
+    render :index, layout: false, status: :unprocessable_entity
+  end
+
+  def process_bulk_update(selected_approvals)
+    MonthlyApproval.transaction do
+      selected_approvals.each do |id, attrs|
+        approval = MonthlyApproval.find_by(id:, approver: current_user)
+        next unless approval
+
+        approval.update!(status: attrs[:status])
+      end
+    end
+  end
+
+  def handle_bulk_update_success
+    flash[:success] = '承認処理が完了しました'
+    redirect_to user_path(current_user)
+  end
+
+  def handle_bulk_update_error(error)
+    @approvals = MonthlyApproval.pending.where(approver: current_user)
+    flash.now[:alert] = "エラーが発生しました: #{error.message}"
+    render :index, layout: false, status: :unprocessable_entity
   end
 end
