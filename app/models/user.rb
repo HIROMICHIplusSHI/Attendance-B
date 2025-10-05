@@ -8,6 +8,11 @@ class User < ApplicationRecord
   belongs_to :manager, class_name: 'User', optional: true
   has_many :subordinates, class_name: 'User', foreign_key: :manager_id
 
+  # 承認申請
+  has_many :monthly_approvals, dependent: :destroy
+  has_many :attendance_change_requests, foreign_key: :requester_id, dependent: :destroy
+  has_many :overtime_requests, dependent: :destroy
+
   validates :name, presence: true, length: { maximum: 50 }
   validates :email, presence: true, length: { maximum: 255 },
                     format: { with: /\A[\w+\-.]+@[a-z\d\-.]+\.[a-z]+\z/i },
