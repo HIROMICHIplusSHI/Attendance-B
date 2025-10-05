@@ -72,7 +72,9 @@ RSpec.describe MonthlyApprovalsController, type: :request do
                                 target_month: Date.today.beginning_of_month, status: :pending)
         MonthlyApproval.create!(user: user2, approver: manager,
                                 target_month: Date.today.beginning_of_month, status: :pending)
-        MonthlyApproval.create!(user: user_for_approved, approver: manager, target_month: Date.today.beginning_of_month, status: :approved) # 承認済みは含まれない
+        MonthlyApproval.create!(user: user_for_approved, approver: manager,
+                                target_month: Date.today.beginning_of_month,
+                                status: :approved) # 承認済みは含まれない
 
         get monthly_approvals_path
 
