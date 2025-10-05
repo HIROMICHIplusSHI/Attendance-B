@@ -247,18 +247,79 @@ RSpec.describe "BasicInfoModal", type: :request do
     it "ユーザー詳細ページにモーダル開くリンクが表示される" do
       get user_path(general_user)
       expect(response.body).to include('基本情報編集')
-      expect(response.body).to include('id="basic-info-edit-btn"')
+      expect(response.body).to include('data-action="modal#open"')
     end
 
     it "モーダル用のコンテナが存在する" do
       get user_path(general_user)
-      expect(response.body).to include('id="basic-info-modal"')
+      expect(response.body).to include('data-controller="modal"')
+      expect(response.body).to include('data-modal-target="container"')
     end
 
     it "基本情報編集ページがAJAXレスポンスに対応している" do
       get edit_basic_info_user_path(general_user), headers: { "X-Requested-With" => "XMLHttpRequest" }
       expect(response).to have_http_status(:success)
       expect(response.body).to include('基本情報編集')
+    end
+
+    it "フォームに確認ダイアログ属性が設定されている" do
+      get edit_basic_info_user_path(general_user)
+      expect(response.body).to include('data-confirm="true"')
+      expect(response.body).to include('data-confirm-message="基本情報を更新してよろしいですか？"')
+    end
+
+    it "閉じるボタンがStimulus actionを使用している" do
+      get edit_basic_info_user_path(general_user)
+      expect(response.body).to include('data-action="modal#close"')
+    end
+
+    it "モーダルコンテンツにラッパーdivが含まれていない（二重モーダル防止）" do
+      get edit_basic_info_user_path(general_user)
+      # modal-header, modal-body, modal-footerは存在するが
+      # modal-dialog, modal-contentのラッパーは含まれない
+      expect(response.body).to include('class="modal-header"')
+      expect(response.body).to include('class="modal-body"')
+      expect(response.body).to include('class="modal-footer"')
+      # ラッパーdivは親ビュー側にのみ存在し、コンテンツビューには無い
+      expect(response.body).not_to match(/<div[^>]*class="modal-dialog"/)
+      expect(response.body).not_to match(/<div[^>]*class="modal-content"[^>]*style=/)
+    end
+  end
+
+  describe "UI要素テスト" do
+    before do
+      post login_path, params: { session: { email: admin_user.email, password: "password123" } }
+    end
+
+    it "基本情報の全ての入力フィールドが表示される" do
+      get edit_basic_info_user_path(general_user)
+
+      # 基本情報フィールド
+      expect(response.body).to include('所属')
+      expect(response.body).to include('基本時間')
+      expect(response.body).to include('指定勤務時間')
+    end
+
+    it "モーダルタイトルが表示される" do
+      get edit_basic_info_user_path(general_user)
+      expect(response.body).to include('基本情報編集')
+    end
+
+    it "更新ボタンとキャンセルボタンが表示される" do
+      get edit_basic_info_user_path(general_user)
+      expect(response.body).to include('更新')
+      expect(response.body).to include('キャンセル')
+    end
+
+    it "時間入力フィールドがtime_field型である" do
+      get edit_basic_info_user_path(general_user)
+      expect(response.body).to match(/type=["']time["']/)
+    end
+
+    it "フォームがユーザーIDを含むPATCHリクエストである" do
+      get edit_basic_info_user_path(general_user)
+      expect(response.body).to include("action=\"#{update_basic_info_user_path(general_user)}\"")
+      expect(response.body).to match(/name=["']_method["'].*value=["']patch["']/)
     end
   end
 end

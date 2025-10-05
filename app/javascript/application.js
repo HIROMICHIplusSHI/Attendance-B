@@ -1,8 +1,15 @@
 // Configure your import map in config/importmap.rb. Read more: https://github.com/rails/importmap-rails
 import { Turbo } from "@hotwired/turbo-rails"
+import { Application } from "@hotwired/stimulus"
+import ModalController from "controllers/modal_controller"
 
 // Turboをグローバルに露出
 window.Turbo = Turbo;
+
+// Stimulusアプリケーションを初期化
+const application = Application.start()
+application.register("modal", ModalController)
+window.Stimulus = application
 
 /**
  * バニラJavaScript ドロップダウンメニュー実装
