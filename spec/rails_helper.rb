@@ -28,6 +28,8 @@ RSpec.configure do |config|
     OvertimeRequest.delete_all
     MonthlyApproval.delete_all
     Attendance.delete_all
+    # manager_idの外部キー制約があるため、先にmanager_idをnullに設定
+    User.update_all(manager_id: nil)
     User.delete_all
   end
 

@@ -186,8 +186,8 @@ RSpec.describe MonthlyApprovalsController, type: :request do
         it '一覧ページにリダイレクトして成功メッセージを表示すること' do
           patch bulk_update_monthly_approvals_path, params: valid_params
 
-          expect(response).to redirect_to(monthly_approvals_path)
-          expect(flash[:notice]).to eq('承認処理が完了しました')
+          expect(response).to redirect_to(user_path(manager))
+          expect(flash[:success]).to eq('承認処理が完了しました')
         end
 
         it '自分が承認者の承認依頼のみ更新すること' do
@@ -229,8 +229,8 @@ RSpec.describe MonthlyApprovalsController, type: :request do
         it 'アラートメッセージを表示してリダイレクトすること' do
           patch bulk_update_monthly_approvals_path, params: no_selection_params
 
-          expect(response).to redirect_to(monthly_approvals_path)
-          expect(flash[:alert]).to eq('承認する項目を選択してください')
+          expect(response).to have_http_status(:unprocessable_entity)
+          expect(flash.now[:alert]).to eq('承認する項目を選択してください')
         end
       end
     end
