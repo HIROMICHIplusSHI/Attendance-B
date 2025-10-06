@@ -1,4 +1,8 @@
 Rails.application.routes.draw do
+  concern :bulk_updatable do
+    collection { patch :bulk_update }
+  end
+
   get 'users/new'
   get 'static_pages/top'
   root 'static_pages#top'
@@ -7,11 +11,8 @@ Rails.application.routes.draw do
   post '/login', to: 'sessions#create'
   delete '/logout', to: 'sessions#destroy'
 
-  resources :monthly_approvals, only: [:index] do
-    collection do
-      patch :bulk_update
-    end
-  end
+  resources :monthly_approvals, only: [:index], concerns: :bulk_updatable
+  resources :attendance_change_approvals, only: [:index], concerns: :bulk_updatable
 
   resources :users do
     member do
