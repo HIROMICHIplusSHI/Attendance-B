@@ -13,6 +13,7 @@ Rails.application.routes.draw do
 
   resources :monthly_approvals, only: [:index], concerns: :bulk_updatable
   resources :attendance_change_approvals, only: [:index], concerns: :bulk_updatable
+  resources :overtime_approvals, only: [:index], concerns: :bulk_updatable
 
   resources :users do
     member do

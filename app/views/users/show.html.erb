@@ -50,7 +50,7 @@
     </div>
 
     <div class="notification-item">
-      <%= link_to "#", data: { action: "modal#openDummy", dummy_title: "残業申請" }, class: "notification-link" do %>
+      <%= link_to overtime_approvals_path, data: { action: "modal#open" }, class: "notification-link" do %>
         【残業申請のお知らせ】
         <% if overtime_requests_count > 0 %>
           <span class="notification-badge"><%= overtime_requests_count %>件</span>

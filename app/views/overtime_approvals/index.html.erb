@@ -1,5 +1,5 @@
 <div class="modal-header">
-  <h4 class="modal-title">所属長承認申請の承認</h4>
+  <h4 class="modal-title">残業申請の承認</h4>
   <button type="button" class="close" data-action="modal#close">&times;</button>
 </div>
 
@@ -15,7 +15,7 @@
   </div>
 <% end %>
 
-<%= form_with url: bulk_update_monthly_approvals_path, method: :patch,
+<%= form_with url: bulk_update_overtime_approvals_path, method: :patch,
               local: true,
               remote: true,
               html: {
@@ -25,40 +25,61 @@
                 }
               } do |f| %>
   <div class="modal-body">
-    <% if @approvals.any? %>
-      <% @approvals.group_by(&:user).each do |user, approvals| %>
+    <% if @requests.any? %>
+      <% @requests.group_by(&:user).each do |user, requests| %>
         <h5 style="margin-top: 20px; margin-bottom: 10px; padding: 10px; background-color: #f5f5f5; border-left: 4px solid #337ab7;">
           【<%= user.name %>さんからの申請】
         </h5>
         <table class="table table-bordered table-striped" style="margin-bottom: 30px;">
           <thead>
             <tr>
-              <th>月</th>
+              <th>日付</th>
+              <th>退社時刻</th>
+              <th>終了予定時間</th>
+              <th>残業時間</th>
+              <th>業務内容</th>
               <th>承認/否認</th>
               <th>変更</th>
               <th>勤怠確認</th>
             </tr>
           </thead>
           <tbody>
-            <% approvals.each do |approval| %>
+            <% requests.each do |overtime_request| %>
+              <% attendance = overtime_request.user.attendances.find_by(worked_on: overtime_request.worked_on) %>
               <tr>
-                <td><%= l(approval.target_month, format: :middle) %></td>
+                <td><%= l(overtime_request.worked_on, format: :short) %></td>
                 <td>
-                  <%= f.select "approvals[#{approval.id}][status]",
+                  <%= attendance&.finished_at&.strftime("%H:%M") || "-" %>
+                </td>
+                <td>
+                  <%= overtime_request.estimated_end_time&.strftime("%H:%M") %>
+                </td>
+                <td>
+                  <% if attendance&.finished_at.present? && overtime_request.estimated_end_time.present? %>
+                    <% estimated_time = Time.zone.parse("#{overtime_request.worked_on} #{overtime_request.estimated_end_time.strftime('%H:%M')}") %>
+                    <% overtime_hours = ((estimated_time - attendance.finished_at) / 3600.0).round(2) %>
+                    <%= overtime_hours %>h
+                  <% else %>
+                    -
+                  <% end %>
+                </td>
+                <td><%= overtime_request.business_content %></td>
+                <td>
+                  <%= f.select "requests[#{overtime_request.id}][status]",
                       options_for_select([
                         ['申請中', 'pending'],
                         ['承認', 'approved'],
                         ['否認', 'rejected']
-                      ], approval.status),
+                      ], overtime_request.status),
                       {},
                       class: "form-control" %>
                 </td>
                 <td class="text-center">
-                  <%= f.check_box "approvals[#{approval.id}][selected]", {}, '1', '0' %>
+                  <%= f.check_box "requests[#{overtime_request.id}][selected]", {}, '1', '0' %>
                 </td>
                 <td class="text-center">
                   <%= link_to "確認",
-                      user_path(user, date: approval.target_month),
+                      user_path(user, date: overtime_request.worked_on.beginning_of_month),
                       target: "_blank",
                       rel: "noopener noreferrer",
                       class: "btn btn-info btn-sm" %>
@@ -75,7 +96,7 @@
 
   <div class="modal-footer">
     <button type="button" class="btn btn-default" data-action="modal#close">キャンセル</button>
-    <% if @approvals.any? %>
+    <% if @requests.any? %>
       <%= f.submit "変更を送信する", class: "btn btn-primary" %>
     <% end %>
   </div>

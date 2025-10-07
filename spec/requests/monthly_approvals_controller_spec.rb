@@ -51,7 +51,7 @@ RSpec.describe MonthlyApprovalsController, type: :request do
 
       it 'indexテンプレートを表示すること' do
         get monthly_approvals_path
-        expect(response.body).to include('申請者からの1ヶ月分の勤怠申請')
+        expect(response.body).to include('所属長承認申請の承認')
       end
 
       it '自分が承認者となっている申請中の承認依頼を取得すること' do
