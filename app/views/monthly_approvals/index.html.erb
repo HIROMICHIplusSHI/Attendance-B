@@ -1,5 +1,5 @@
 <div class="modal-header">
-  <h4 class="modal-title">申請者からの1ヶ月分の勤怠申請</h4>
+  <h4 class="modal-title">所属長承認申請の承認</h4>
   <button type="button" class="close" data-action="modal#close">&times;</button>
 </div>
 
@@ -26,43 +26,48 @@
               } do |f| %>
   <div class="modal-body">
     <% if @approvals.any? %>
-      <table class="table table-bordered table-striped">
-        <thead>
-          <tr>
-            <th>月</th>
-            <th>指示者確認印</th>
-            <th>変更</th>
-            <th>勤怠を確認する</th>
-          </tr>
-        </thead>
-        <tbody>
-          <% @approvals.each do |approval| %>
+      <% @approvals.group_by(&:user).each do |user, approvals| %>
+        <h5 style="margin-top: 20px; margin-bottom: 10px; padding: 10px; background-color: #f5f5f5; border-left: 4px solid #337ab7;">
+          【<%= user.name %>さんからの申請】
+        </h5>
+        <table class="table table-bordered table-striped" style="margin-bottom: 30px;">
+          <thead>
             <tr>
-              <td><%= l(approval.target_month, format: :middle) %></td>
-              <td>
-                <%= f.select "approvals[#{approval.id}][status]",
-                    options_for_select([
-                      ['申請中', 'pending'],
-                      ['承認', 'approved'],
-                      ['否認', 'rejected']
-                    ], approval.status),
-                    {},
-                    class: "form-control" %>
-              </td>
-              <td class="text-center">
-                <%= f.check_box "approvals[#{approval.id}][selected]", {}, '1', '0' %>
-              </td>
-              <td class="text-center">
-                <%= link_to "確認",
-                    user_path(approval.user, month: approval.target_month),
-                    target: "_blank",
-                    rel: "noopener noreferrer",
-                    class: "btn btn-info btn-sm" %>
-              </td>
+              <th>月</th>
+              <th>承認/否認</th>
+              <th>変更</th>
+              <th>勤怠確認</th>
             </tr>
-          <% end %>
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            <% approvals.each do |approval| %>
+              <tr>
+                <td><%= l(approval.target_month, format: :middle) %></td>
+                <td>
+                  <%= f.select "approvals[#{approval.id}][status]",
+                      options_for_select([
+                        ['申請中', 'pending'],
+                        ['承認', 'approved'],
+                        ['否認', 'rejected']
+                      ], approval.status),
+                      {},
+                      class: "form-control" %>
+                </td>
+                <td class="text-center">
+                  <%= f.check_box "approvals[#{approval.id}][selected]", {}, '1', '0' %>
+                </td>
+                <td class="text-center">
+                  <%= link_to "確認",
+                      user_path(user, date: approval.target_month),
+                      target: "_blank",
+                      rel: "noopener noreferrer",
+                      class: "btn btn-info btn-sm" %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      <% end %>
     <% else %>
       <p class="text-center text-muted">承認待ちの申請はありません</p>
     <% end %>

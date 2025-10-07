@@ -4,7 +4,7 @@ class MonthlyApprovalsController < ApplicationController
   before_action :require_manager, only: %i[index bulk_update]
 
   def index
-    @approvals = MonthlyApproval.pending.where(approver: current_user)
+    @approvals = MonthlyApproval.pending.where(approver: current_user).includes(:user)
 
     return unless request.xhr?
 
@@ -72,7 +72,7 @@ class MonthlyApprovalsController < ApplicationController
   end
 
   def render_no_selection_error
-    @approvals = MonthlyApproval.pending.where(approver: current_user)
+    @approvals = MonthlyApproval.pending.where(approver: current_user).includes(:user)
     flash.now[:alert] = '承認する項目を選択してください'
     render :index, layout: false, status: :unprocessable_entity
   end
@@ -85,7 +85,7 @@ class MonthlyApprovalsController < ApplicationController
   end
 
   def render_pending_status_error
-    @approvals = MonthlyApproval.pending.where(approver: current_user)
+    @approvals = MonthlyApproval.pending.where(approver: current_user).includes(:user)
     flash.now[:alert] = '承認または否認を選択してください'
     render :index, layout: false, status: :unprocessable_entity
   end
@@ -107,7 +107,7 @@ class MonthlyApprovalsController < ApplicationController
   end
 
   def handle_bulk_update_error(error)
-    @approvals = MonthlyApproval.pending.where(approver: current_user)
+    @approvals = MonthlyApproval.pending.where(approver: current_user).includes(:user)
     flash.now[:alert] = "エラーが発生しました: #{error.message}"
     render :index, layout: false, status: :unprocessable_entity
   end
