@@ -15,6 +15,7 @@ class MonthlyApprovalsController < ApplicationController
     selected_approvals = extract_selected_approvals
 
     return render_no_selection_error if selected_approvals.empty?
+    return render_pending_status_error if pending_status?(selected_approvals)
 
     process_bulk_update(selected_approvals)
     handle_bulk_update_success
@@ -73,6 +74,19 @@ class MonthlyApprovalsController < ApplicationController
   def render_no_selection_error
     @approvals = MonthlyApproval.pending.where(approver: current_user)
     flash.now[:alert] = '承認する項目を選択してください'
+    render :index, layout: false, status: :unprocessable_entity
+  end
+
+  def pending_status?(selected_approvals)
+    selected_approvals.any? { |_id, attrs| attrs[:status] == 'pending' }
+  rescue NoMethodError
+    # ActionController::Parametersの場合
+    selected_approvals.each.any? { |_id, attrs| attrs[:status] == 'pending' }
+  end
+
+  def render_pending_status_error
+    @approvals = MonthlyApproval.pending.where(approver: current_user)
+    flash.now[:alert] = '承認または否認を選択してください'
     render :index, layout: false, status: :unprocessable_entity
   end
 

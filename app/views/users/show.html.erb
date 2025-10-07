@@ -41,7 +41,7 @@
     </div>
 
     <div class="notification-item">
-      <%= link_to "#", data: { action: "modal#openDummy", dummy_title: "勤怠変更申請" }, class: "notification-link" do %>
+      <%= link_to attendance_change_approvals_path, data: { action: "modal#open" }, class: "notification-link" do %>
         【勤怠変更申請のお知らせ】
         <% if attendance_change_requests_count > 0 %>
           <span class="notification-badge"><%= attendance_change_requests_count %>件</span>
