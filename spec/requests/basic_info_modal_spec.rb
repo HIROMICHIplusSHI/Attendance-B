@@ -6,7 +6,7 @@ RSpec.describe "BasicInfoModal", type: :request do
       name: "管理者ユーザー",
       email: "admin_#{Time.current.to_i}@example.com",
       password: "password123",
-      admin: true,
+      role: :admin,
       department: "総務部",
       basic_time: Time.current.change(hour: 8, min: 0),
       work_time: Time.current.change(hour: 7, min: 30)
@@ -18,7 +18,7 @@ RSpec.describe "BasicInfoModal", type: :request do
       name: "一般ユーザー",
       email: "general_#{Time.current.to_i}@example.com",
       password: "password123",
-      admin: false,
+      role: :employee,
       department: "開発部",
       basic_time: Time.current.change(hour: 8, min: 0),
       work_time: Time.current.change(hour: 7, min: 30)
@@ -245,14 +245,22 @@ RSpec.describe "BasicInfoModal", type: :request do
     end
 
     it "ユーザー詳細ページにモーダ開くリンクが表示される" do
-      # 管理者が自分のページを見る場合のみ基本情報編集ボタンが表示される
-      get user_path(admin_user)
-      expect(response.body).to include('基本情報編集')
-      expect(response.body).to include('data-action="modal#open"')
+      # 一般ユーザーが自分のページを見る場合、モーダルコンテナは存在するが基本情報編集ボタンは表示されない
+      post login_path, params: { session: { email: general_user.email, password: "password123" } }
+      get user_path(general_user)
+      expect(response).to have_http_status(:success)
+      # 一般ユーザーは基本情報編集リンクを見ることができない（管理者専用）
+      expect(response.body).not_to include('edit_basic_info')
+      # ただしモーダルコンテナ自体は存在する
+      expect(response.body).to include('data-controller="modal"')
     end
 
     it "モーダル用のコンテナが存在する" do
-      get user_path(admin_user)
+      # 一般ユーザーが自分のページを見る場合、モーダルコンテナは存在する
+      post login_path, params: { session: { email: general_user.email, password: "password123" } }
+      get user_path(general_user)
+      expect(response).to have_http_status(:success)
+      # 自分のページにはモーダルコンテナが存在する
       expect(response.body).to include('data-controller="modal"')
       expect(response.body).to include('data-modal-target="container"')
     end

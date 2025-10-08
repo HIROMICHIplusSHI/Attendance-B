@@ -108,7 +108,7 @@ RSpec.describe "Attendances", type: :request do
         name: "管理者ユーザー",
         email: "admin_#{Time.current.to_i}@example.com",
         password: "password123",
-        admin: true,
+        role: :admin,
         department: "総務部",
         basic_time: Time.current.change(hour: 8, min: 0),
         work_time: Time.current.change(hour: 7, min: 30)
@@ -120,7 +120,7 @@ RSpec.describe "Attendances", type: :request do
         name: "一般ユーザー",
         email: "general_#{Time.current.to_i}@example.com",
         password: "password123",
-        admin: false,
+        role: :employee,
         department: "開発部",
         basic_time: Time.current.change(hour: 8, min: 0),
         work_time: Time.current.change(hour: 7, min: 30)

@@ -1,9 +1,9 @@
 require 'rails_helper'
 
 RSpec.describe "UsersManagement", type: :request do
-  let(:admin_user) { User.create!(name: "管理者", email: "admin@example.com", password: "password123", admin: true) }
-  let(:regular_user) { User.create!(name: "一般ユーザー", email: "user@example.com", password: "password123") }
-  let(:target_user) { User.create!(name: "対象ユーザー", email: "target@example.com", password: "password123") }
+  let(:admin_user) { User.create!(name: "管理者", email: "admin@example.com", password: "password123", role: :admin, basic_time: Time.zone.parse("2025-01-01 08:00"), work_time: Time.zone.parse("2025-01-01 08:00")) }
+  let(:regular_user) { User.create!(name: "一般ユーザー", email: "user@example.com", password: "password123", basic_time: Time.zone.parse("2025-01-01 08:00"), work_time: Time.zone.parse("2025-01-01 08:00")) }
+  let(:target_user) { User.create!(name: "対象ユーザー", email: "target@example.com", password: "password123", basic_time: Time.zone.parse("2025-01-01 08:00"), work_time: Time.zone.parse("2025-01-01 08:00")) }
 
   describe "管理者の権限" do
     before do
