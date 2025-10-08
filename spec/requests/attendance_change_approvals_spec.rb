@@ -15,7 +15,9 @@ RSpec.describe AttendanceChangeApprovalsController, type: :request do
       name: "部下ユーザー",
       email: "subordinate_#{Time.current.to_i}@example.com",
       password: "password123",
-      department: "開発部"
+      department: "開発部",
+      basic_time: Time.zone.parse("2025-01-01 08:00"),
+      work_time: Time.zone.parse("2025-01-01 08:00")
     )
   end
 
@@ -24,7 +26,10 @@ RSpec.describe AttendanceChangeApprovalsController, type: :request do
       name: "マネージャー",
       email: "manager_#{Time.current.to_i}@example.com",
       password: "password123",
-      department: "開発部"
+      department: "開発部",
+      role: :manager,
+      basic_time: Time.zone.parse("2025-01-01 08:00"),
+      work_time: Time.zone.parse("2025-01-01 08:00")
     ).tap do |user|
       subordinate.update!(manager_id: user.id)
     end
@@ -35,7 +40,9 @@ RSpec.describe AttendanceChangeApprovalsController, type: :request do
       name: "一般ユーザー",
       email: "regular_#{Time.current.to_i}@example.com",
       password: "password123",
-      department: "開発部"
+      department: "開発部",
+      basic_time: Time.zone.parse("2025-01-01 08:00"),
+      work_time: Time.zone.parse("2025-01-01 08:00")
     )
   end
 
@@ -114,7 +121,7 @@ RSpec.describe AttendanceChangeApprovalsController, type: :request do
 
       it '他のマネージャー宛の勤怠変更申請は含まれないこと' do
         other_manager = User.create!(name: "他マネージャー", email: "other_mgr_#{Time.current.to_i}@example.com",
-                                     password: "password123")
+                                     password: "password123", role: :manager)
         user3 = User.create!(name: "申請者3", email: "user3_#{Time.current.to_i}@example.com", password: "password123")
 
         attendance3 = create_attendance_data(user3)
@@ -278,7 +285,7 @@ RSpec.describe AttendanceChangeApprovalsController, type: :request do
 
         it '自分が承認者の申請のみ更新すること' do
           other_manager = User.create!(name: "他マネージャー", email: "othmgr_#{Time.current.to_i}@example.com",
-                                       password: "password123")
+                                       password: "password123", role: :manager)
           user4 = User.create!(name: "申請者4", email: "ap4_#{Time.current.to_i}@example.com", password: "password123")
           attendance4 = create_attendance_data(user4)
 
