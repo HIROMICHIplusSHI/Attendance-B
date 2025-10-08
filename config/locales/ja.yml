@@ -1,4 +1,10 @@
 ja:
+  enums:
+    user:
+      role:
+        employee: 一般社員
+        manager: 上長
+        admin: 管理者
   activerecord:
     models:
       user: ユーザー
@@ -12,6 +18,8 @@ ja:
         work_time: 指定勤務時間
         password: パスワード
         password_confirmation: パスワード再入力
+        role: 役割
+        employee_number: 社員番号
       attendance:
         worked_on: 日付
         started_at: 出勤時間
