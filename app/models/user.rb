@@ -13,6 +13,9 @@ class User < ApplicationRecord
   has_many :attendance_change_requests, foreign_key: :requester_id, dependent: :destroy
   has_many :overtime_requests, dependent: :destroy
 
+  # 権限管理
+  enum role: { employee: 0, manager: 1, admin: 2 }
+
   validates :name, presence: true, length: { maximum: 50 }
   validates :email, presence: true, length: { maximum: 255 },
                     format: { with: /\A[\w+\-.]+@[a-z\d\-.]+\.[a-z]+\z/i },
@@ -21,12 +24,9 @@ class User < ApplicationRecord
   validates :password, length: { minimum: 6 }, allow_blank: true, on: :update
   validates :department, length: { maximum: 50 }, allow_blank: true
   validates :basic_time, :work_time, presence: true
+  validates :employee_number, uniqueness: true, allow_nil: true
 
   before_save { self.email = email.downcase }
-
-  def admin?
-    admin
-  end
 
   # ランダムなトークンを返す
   def self.new_token
@@ -57,8 +57,8 @@ class User < ApplicationRecord
     update_attribute(:remember_digest, nil)
   end
 
-  # 部下がいるかどうかを判定
-  def manager?
-    subordinates.exists?
+  # 承認権限チェック
+  def can_approve?
+    manager?
   end
 end
