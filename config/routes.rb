@@ -21,6 +21,9 @@ Rails.application.routes.draw do
   get '/basic_info', to: 'basic_info#index'
 
   resources :users do
+    collection do
+      post 'import_csv'
+    end
     member do
       get 'edit_basic_info'
       patch 'update_basic_info'
