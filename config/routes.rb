@@ -15,6 +15,11 @@ Rails.application.routes.draw do
   resources :attendance_change_approvals, only: [:index], concerns: :bulk_updatable
   resources :overtime_approvals, only: [:index], concerns: :bulk_updatable
 
+  # 管理者専用ページ
+  resources :working_employees, only: [:index]
+  resources :offices, only: [:index]
+  get '/basic_info', to: 'basic_info#index'
+
   resources :users do
     member do
       get 'edit_basic_info'
