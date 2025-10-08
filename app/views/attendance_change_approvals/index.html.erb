@@ -16,14 +16,10 @@
 <% end %>
 
 <%= form_with url: bulk_update_attendance_change_approvals_path, method: :patch,
-              local: true,
-              remote: true,
-              html: {
-                data: {
-                  confirm: "true",
-                  confirm_message: "変更内容を送信してよろしいですか？"
-                }
-              } do |f| %>
+              local: true do |f| %>
+  <!-- クライアントサイドバリデーションエラー表示エリア -->
+  <div id="validation-errors" class="alert alert-danger" style="margin: 15px; display: none;"></div>
+
   <div class="modal-body">
     <% if @requests.any? %>
       <% @requests.group_by(&:requester).each do |requester, requests| %>
@@ -88,7 +84,7 @@
   <div class="modal-footer">
     <button type="button" class="btn btn-default" data-action="modal#close">キャンセル</button>
     <% if @requests.any? %>
-      <%= f.submit "変更を送信する", class: "btn btn-primary" %>
+      <%= f.submit "変更を送信する", class: "btn btn-primary", data: { turbo_confirm: "変更内容を送信してよろしいですか？" } %>
     <% end %>
   </div>
 <% end %>

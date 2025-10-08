@@ -12,9 +12,7 @@
 <%= form_with url: user_attendance_application_requests_path(@attendance.user, @attendance),
               scope: :application_request,
               id: "application-request-form",
-              local: true,
-              remote: true,
-              html: { data: { confirm: "true", confirm_message: "この内容で申請してよろしいですか？" } } do |f| %>
+              local: true do |f| %>
   <div class="modal-body">
     <!-- 日付情報 -->
     <div class="form-group">
@@ -92,7 +90,12 @@
     <div class="form-group">
       <label>承認者を選択 <span class="text-danger">*</span></label>
       <%= f.select :approver_id,
-          options_from_collection_for_select(User.where.not(id: @attendance.user.id), :id, :name, @params&.[](:approver_id) || @attendance.user.manager_id),
+          options_from_collection_for_select(
+            User.manager.where.not(id: @attendance.user.id).order(:name),
+            :id,
+            :name,
+            @params&.[](:approver_id) || @attendance.user.manager_id
+          ),
           { prompt: "承認者を選択してください" },
           class: "form-control" %>
     </div>
@@ -100,6 +103,6 @@
 
   <div class="modal-footer">
     <button type="button" class="btn btn-default" data-action="modal#close">キャンセル</button>
-    <%= f.submit "申請", class: "btn btn-primary" %>
+    <%= f.submit "申請", class: "btn btn-primary", data: { turbo_confirm: "この内容で申請してよろしいですか？" } %>
   </div>
 <% end %>

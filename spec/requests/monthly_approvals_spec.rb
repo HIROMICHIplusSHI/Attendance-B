@@ -17,7 +17,9 @@ RSpec.describe "MonthlyApprovals", type: :request do
       name: "部下ユーザー",
       email: "subordinate_#{Time.current.to_i}@example.com",
       password: "password123",
-      department: "開発部"
+      department: "開発部",
+      basic_time: Time.zone.parse("2025-01-01 08:00"),
+      work_time: Time.zone.parse("2025-01-01 08:00")
     )
   end
 
@@ -26,7 +28,10 @@ RSpec.describe "MonthlyApprovals", type: :request do
       name: "マネージャー",
       email: "manager_#{Time.current.to_i}@example.com",
       password: "password123",
-      department: "開発部"
+      department: "開発部",
+      role: :manager,
+      basic_time: Time.zone.parse("2025-01-01 08:00"),
+      work_time: Time.zone.parse("2025-01-01 08:00")
     ).tap do |user|
       subordinate.update!(manager_id: user.id)
     end
@@ -37,7 +42,9 @@ RSpec.describe "MonthlyApprovals", type: :request do
       name: "一般ユーザー",
       email: "regular_#{Time.current.to_i}@example.com",
       password: "password123",
-      department: "開発部"
+      department: "開発部",
+      basic_time: Time.zone.parse("2025-01-01 08:00"),
+      work_time: Time.zone.parse("2025-01-01 08:00")
     )
   end
 

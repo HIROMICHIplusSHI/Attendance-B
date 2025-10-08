@@ -3,14 +3,14 @@ require 'rails_helper'
 RSpec.describe "Users", type: :request do
   let(:admin_user) do
     User.create!(name: "管理者ユーザー", email: "test_admin_#{Time.current.to_i}@example.com", password: "password123",
-                 admin: true, department: "総務部",
+                 role: :admin, department: "総務部",
                  basic_time: Time.current.change(hour: 8, min: 0),
                  work_time: Time.current.change(hour: 7, min: 30))
   end
 
   let(:general_user) do
     User.create!(name: "一般ユーザー", email: "test_general_#{Time.current.to_i}@example.com", password: "password123",
-                 admin: false, department: "開発部",
+                 role: :employee, department: "開発部",
                  basic_time: Time.current.change(hour: 8, min: 0),
                  work_time: Time.current.change(hour: 7, min: 30))
   end
@@ -533,6 +533,57 @@ RSpec.describe "Users", type: :request do
           get user_path(general_user)
           expect(response.body).to include("再申請")
         end
+      end
+    end
+  end
+
+  describe "GET /users/:id (管理者の勤怠アクセス制限)" do
+    let(:admin) do
+      User.create!(
+        name: "管理者",
+        email: "admin_attendance_#{Time.current.to_i}@example.com",
+        password: "password123",
+        role: :admin,
+        basic_time: Time.zone.parse("2025-01-01 08:00"),
+        work_time: Time.zone.parse("2025-01-01 08:00")
+      )
+    end
+
+    context "管理者が自分の勤怠ページにアクセスする場合" do
+      before do
+        post login_path, params: { session: { email: admin.email, password: "password123" } }
+      end
+
+      it "ユーザー一覧ページにリダイレクトされること" do
+        get user_path(admin)
+        expect(response).to redirect_to(users_path)
+      end
+
+      it "エラーメッセージが表示されること" do
+        get user_path(admin)
+        expect(flash[:danger]).to eq("管理者は勤怠機能を利用できません。")
+      end
+    end
+
+    context "管理者が他ユーザーの勤怠ページにアクセスする場合" do
+      let(:employee) do
+        User.create!(
+          name: "社員",
+          email: "employee_for_admin_#{Time.current.to_i}@example.com",
+          password: "password123",
+          role: :employee,
+          basic_time: Time.zone.parse("2025-01-01 08:00"),
+          work_time: Time.zone.parse("2025-01-01 08:00")
+        )
+      end
+
+      before do
+        post login_path, params: { session: { email: admin.email, password: "password123" } }
+      end
+
+      it "正常にアクセスできること" do
+        get user_path(employee)
+        expect(response).to have_http_status(:success)
       end
     end
   end

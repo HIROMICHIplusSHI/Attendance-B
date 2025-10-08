@@ -210,10 +210,14 @@
 
         <!-- 所定外勤務：時間外時間 -->
         <td class="text-center">
-          <% if day.finished_at.present? && overtime&.estimated_end_time.present? %>
+          <% if overtime&.rejected? %>
+            0.00
+          <% elsif day.finished_at.present? && overtime&.estimated_end_time.present? && overtime&.approved? %>
+            <!-- デバッグ: <%= "finished_at: #{day.finished_at}, worked_on: #{day.worked_on}, estimated: #{overtime.estimated_end_time}" %> -->
+            <% finished_time = Time.zone.parse("#{day.worked_on} #{day.finished_at.strftime('%H:%M')}") %>
             <% estimated_time = Time.zone.parse("#{day.worked_on} #{overtime.estimated_end_time.strftime('%H:%M')}") %>
-            <% overtime_hours = ((estimated_time - day.finished_at) / 3600.0).round(2) %>
-            <%= format("%.2f", overtime_hours) %>
+            <% overtime_hours = ((estimated_time - finished_time) / 3600.0).round(2) %>
+            <%= format("%.2f", [overtime_hours, 0].max) %>
           <% end %>
         </td>
 
@@ -264,9 +268,11 @@
           <% total_overtime = 0.0 %>
           <% @overtime_requests&.each do |date, overtime| %>
             <% day = @attendances.find { |a| a.worked_on == date } %>
-            <% if day&.finished_at.present? && overtime&.estimated_end_time.present? %>
+            <% if overtime&.approved? && day&.finished_at.present? && overtime&.estimated_end_time.present? %>
+              <% finished_time = Time.zone.parse("#{day.worked_on} #{day.finished_at.strftime('%H:%M')}") %>
               <% estimated_time = Time.zone.parse("#{day.worked_on} #{overtime.estimated_end_time.strftime('%H:%M')}") %>
-              <% total_overtime += ((estimated_time - day.finished_at) / 3600.0) %>
+              <% overtime_hours = ((estimated_time - finished_time) / 3600.0) %>
+              <% total_overtime += [overtime_hours, 0].max %>
             <% end %>
           <% end %>
           <%= format("%.2f", total_overtime) %>
@@ -293,7 +299,12 @@
               <%= form_with model: MonthlyApproval.new, url: user_monthly_approvals_path(@user), local: true, html: { style: "display: flex; flex-direction: column; gap: 8px; align-items: center;" } do |f| %>
                 <%= f.hidden_field :target_month, value: @first_day %>
                 <%= f.select :approver_id,
-                    options_from_collection_for_select(User.where.not(id: @user.id), :id, :name, @user.manager_id),
+                    options_from_collection_for_select(
+                      User.manager.where.not(id: @user.id).order(:name),
+                      :id,
+                      :name,
+                      @user.manager_id
+                    ),
                     { prompt: "承認者を選択" },
                     class: "form-select", style: "width: 200px;" %>
                 <%= f.submit approval.present? ? "再申請" : "申請", class: "btn btn-primary", style: "width: 200px;",

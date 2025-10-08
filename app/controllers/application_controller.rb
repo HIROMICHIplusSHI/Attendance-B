@@ -45,7 +45,11 @@ class ApplicationController < ActionController::Base
   end
 
   def manager_of_user?
-    current_user.manager? && @user&.manager_id == current_user.id
+    return false unless current_user.manager? && @user
+
+    # 自分が承認者として指定されている申請があるユーザーのみ閲覧可能
+    MonthlyApproval.exists?(user: @user, approver: current_user) ||
+      OvertimeRequest.exists?(user: @user, approver: current_user)
   end
 
   # 月次データ設定

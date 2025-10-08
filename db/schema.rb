@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2025_10_04_134513) do
+ActiveRecord::Schema[7.1].define(version: 2025_10_08_115251) do
   create_table "attendance_change_requests", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.bigint "attendance_id", null: false
     t.bigint "requester_id", null: false
@@ -79,8 +79,12 @@ ActiveRecord::Schema[7.1].define(version: 2025_10_04_134513) do
     t.string "department"
     t.string "remember_digest"
     t.bigint "manager_id"
+    t.integer "role", default: 0, null: false
+    t.string "employee_number"
     t.index ["email"], name: "index_users_on_email", unique: true
+    t.index ["employee_number"], name: "index_users_on_employee_number", unique: true
     t.index ["manager_id"], name: "index_users_on_manager_id"
+    t.index ["role"], name: "index_users_on_role"
   end
 
   add_foreign_key "attendance_change_requests", "attendances"

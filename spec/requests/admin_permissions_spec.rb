@@ -3,21 +3,21 @@ require 'rails_helper'
 RSpec.describe "AdminPermissions", type: :request do
   let(:admin_user) do
     User.create!(name: "管理者ユーザー", email: "admin@example.com", password: "password123",
-                 admin: true,
+                 role: :admin,
                  basic_time: Time.current.change(hour: 8, min: 0),
                  work_time: Time.current.change(hour: 7, min: 30))
   end
 
   let(:general_user) do
     User.create!(name: "一般ユーザー", email: "user@example.com", password: "password123",
-                 admin: false,
+                 role: :employee,
                  basic_time: Time.current.change(hour: 8, min: 0),
                  work_time: Time.current.change(hour: 7, min: 30))
   end
 
   let(:other_user) do
     User.create!(name: "他のユーザー", email: "other@example.com", password: "password123",
-                 admin: false,
+                 role: :employee,
                  basic_time: Time.current.change(hour: 8, min: 0),
                  work_time: Time.current.change(hour: 7, min: 30))
   end

@@ -18,6 +18,16 @@
     <%= f.label :work_time, "指定勤務時間", class: "label-basic-info" %>
     <%= f.time_field :work_time, class: "form-control" %>
 
+    <%= f.label :role, "役割", class: "label-basic-info" %>
+    <%= f.select :role,
+        User.roles.keys.map { |k| [I18n.t("enums.user.role.#{k}"), k] },
+        {},
+        class: "form-control" %>
+
+    <%= f.label :employee_number, "社員番号", class: "label-basic-info" %>
+    <%= f.text_field :employee_number, class: "form-control", readonly: @user.employee_number.present? %>
+    <small class="form-text text-muted">※一度設定すると変更できません</small>
+
     <div class="modal-footer">
       <%= f.submit "更新", class: "btn btn-primary" %>
       <button type="button" class="btn btn-default" data-action="modal#close">キャンセル</button>

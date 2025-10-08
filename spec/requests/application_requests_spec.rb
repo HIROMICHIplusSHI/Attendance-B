@@ -331,8 +331,7 @@ RSpec.describe "ApplicationRequests", type: :request do
 
       it "フォームに確認ダイアログ属性が設定されている" do
         get new_user_attendance_application_request_path(user, attendance)
-        expect(response.body).to include('data-confirm="true"')
-        expect(response.body).to include('data-confirm-message="この内容で申請してよろしいですか？"')
+        expect(response.body).to include('data-turbo-confirm="この内容で申請してよろしいですか？"')
       end
 
       it "閉じるボタンがStimulus actionを使用している" do

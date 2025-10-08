@@ -30,7 +30,13 @@ class SessionsController < ApplicationController
     log_in user
     params[:session][:remember_me] == '1' ? remember(user) : forget(user)
     flash[:success] = 'ログインしました'
-    redirect_to user
+
+    # 管理者はユーザー一覧へ、それ以外は勤怠ページへ
+    if user.admin?
+      redirect_to users_path
+    else
+      redirect_to user
+    end
   end
 
   def failed_login
