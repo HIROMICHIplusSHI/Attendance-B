@@ -84,7 +84,11 @@ RSpec.describe "HeaderNavigation", type: :request do
   end
 
   describe "管理者ログイン時のヘッダー" do
-    let(:admin_user) { User.create!(name: "管理者", email: "admin@example.com", password: "password123", role: :admin, basic_time: Time.zone.parse("2025-01-01 08:00"), work_time: Time.zone.parse("2025-01-01 08:00")) }
+    let(:admin_user) do
+      User.create!(name: "管理者", email: "admin@example.com", password: "password123",
+                   role: :admin, basic_time: Time.zone.parse("2025-01-01 08:00"),
+                   work_time: Time.zone.parse("2025-01-01 08:00"))
+    end
 
     before do
       post login_path, params: { session: { email: admin_user.email, password: "password123" } }
