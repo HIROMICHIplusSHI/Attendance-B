@@ -5,7 +5,7 @@ export default class extends Controller {
   static targets = ["container", "content"]
 
   connect() {
-    console.log("Modal controller connected")
+    // Modal controller connected
   }
 
   // ダミーモーダルを開く
@@ -81,10 +81,76 @@ export default class extends Controller {
     const form = this.contentTarget.querySelector('form')
     if (!form) return
 
+    // data-remote="true" が明示的に設定されている場合のみカスタム処理
+    // local: true のフォームはdata-remote属性を持たないため、通常のフォーム送信になる
+    const isRemote = form.getAttribute('data-remote') === 'true'
+    if (!isRemote) {
+      // local: true のフォームにもバリデーションを追加
+      this.setupApprovalValidation(form)
+      return
+    }
+
+    // Ajaxフォーム送信（remote: true）を使用
     form.addEventListener('submit', (e) => {
       e.preventDefault()
       this.submitForm(form)
     })
+  }
+
+  // 承認フォームのバリデーション
+  setupApprovalValidation(form) {
+    // 承認フォームかどうかを判定（bulk_update パスが含まれる場合）
+    if (!form.action.includes('bulk_update')) return
+
+    // エラー表示エリアを取得
+    const errorArea = form.querySelector('#validation-errors')
+
+    // submit イベントで確認ダイアログより前にバリデーション
+    form.addEventListener('submit', (e) => {
+      // エラーメッセージをクリア
+      if (errorArea) {
+        errorArea.style.display = 'none'
+        errorArea.textContent = ''
+      }
+
+      // チェックされた項目を取得
+      const checkboxes = form.querySelectorAll('input[type="checkbox"][name*="[selected]"]:checked')
+
+      if (checkboxes.length === 0) {
+        e.preventDefault()
+        e.stopImmediatePropagation()
+        this.showValidationError(errorArea, '変更する項目にチェックを入れてください')
+        return false
+      }
+
+      // チェックされた項目の承認/否認が選択されているかを確認
+      let hasError = false
+      checkboxes.forEach(checkbox => {
+        const requestId = checkbox.name.match(/requests\[(\d+)\]/)[1]
+        const statusSelect = form.querySelector(`select[name="requests[${requestId}][status]"]`)
+
+        if (statusSelect && statusSelect.value === 'pending') {
+          hasError = true
+        }
+      })
+
+      if (hasError) {
+        e.preventDefault()
+        e.stopImmediatePropagation()
+        this.showValidationError(errorArea, 'チェックした項目の承認/否認を選択してください')
+        return false
+      }
+    }, true) // キャプチャフェーズで実行
+  }
+
+  // バリデーションエラーを表示
+  showValidationError(errorArea, message) {
+    if (errorArea) {
+      errorArea.textContent = message
+      errorArea.style.display = 'block'
+      // エラーエリアまでスクロール
+      errorArea.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+    }
   }
 
   // フォーム送信
