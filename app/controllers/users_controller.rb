@@ -31,8 +31,17 @@ class UsersController < ApplicationController
   end
 
   def show
-    redirect_to(root_path) unless admin_or_correct_user
-    flash[:danger] = "アクセス権限がありません。" unless admin_or_correct_user
+    # 管理者は自分の勤怠ページにアクセス不可
+    if current_user.admin? && current_user?(@user)
+      flash[:danger] = "管理者は勤怠機能を利用できません。"
+      redirect_to users_path and return
+    end
+
+    # 既存のアクセス制御
+    return if admin_or_correct_user
+
+    flash[:danger] = "アクセス権限がありません。"
+    redirect_to(root_path) and return
   end
 
   def edit; end
@@ -93,7 +102,7 @@ class UsersController < ApplicationController
   end
 
   def basic_info_params
-    params.require(:user).permit(:department, :basic_time, :work_time)
+    params.require(:user).permit(:department, :basic_time, :work_time, :role, :employee_number)
   end
 
   def admin_or_correct_user_check
