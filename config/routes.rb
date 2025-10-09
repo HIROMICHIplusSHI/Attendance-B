@@ -17,7 +17,7 @@ Rails.application.routes.draw do
 
   # 管理者専用ページ
   resources :working_employees, only: [:index]
-  resources :offices, only: [:index]
+  resources :offices
   get '/basic_info', to: 'basic_info#index'
 
   resources :users do
