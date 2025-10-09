@@ -107,15 +107,19 @@ E101,小林一郎,kobayashi@example.com,password123,employee,M100</code></pre>
         <th></th>
       </tr>
     </thead>
-    <tbody>
-      <% @users.each do |user| %>
+    <% @users.each do |user| %>
+      <tbody data-controller="accordion" data-accordion-url-value="<%= edit_admin_user_path(user) %>">
         <tr>
           <td><%= link_to user.name, user_path(user) %></td>
           <td><%= user.email %></td>
           <td><%= user.department %></td>
           <td>
             <% if current_user.admin? && !current_user?(user) %>
-              <%= link_to "編集", edit_user_path(user), class: "btn btn-primary btn-sm" %>
+              <button type="button"
+                      class="btn btn-primary btn-sm"
+                      data-action="click->accordion#toggle">
+                編集
+              </button>
               <%= link_to "削除", user,
                   data: {
                     turbo_method: :delete,
@@ -125,8 +129,15 @@ E101,小林一郎,kobayashi@example.com,password123,employee,M100</code></pre>
             <% end %>
           </td>
         </tr>
-      <% end %>
-    </tbody>
+        <% if current_user.admin? && !current_user?(user) %>
+          <tr>
+            <td colspan="4" style="padding: 0; border-top: none;">
+              <div data-accordion-target="content" style="display: none;"></div>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    <% end %>
   </table>
 </div>
 
