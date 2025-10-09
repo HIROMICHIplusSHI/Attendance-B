@@ -2,7 +2,7 @@ class User < ApplicationRecord
   attr_accessor :remember_token
 
   has_many :attendances, dependent: :destroy
-  has_secure_password validations: false
+  has_secure_password
 
   # 組織階層
   belongs_to :manager, class_name: 'User', optional: true
@@ -24,9 +24,14 @@ class User < ApplicationRecord
   validates :password, length: { minimum: 6 }, allow_blank: true, on: :update
   validates :department, length: { maximum: 50 }, allow_blank: true
   validates :basic_time, :work_time, presence: true
-  validates :employee_number, uniqueness: true, allow_nil: true
+  validates :employee_number, uniqueness: true, allow_blank: true
+  validates :card_id, uniqueness: { allow_nil: true }
+  validates :scheduled_start_time, presence: true, if: -> { scheduled_end_time.present? }
+  validates :scheduled_end_time, presence: true, if: -> { scheduled_start_time.present? }
+  validate :scheduled_times_logical_order
 
   before_save { self.email = email.downcase }
+  before_save :normalize_blank_fields
 
   # ランダムなトークンを返す
   def self.new_token
@@ -60,5 +65,22 @@ class User < ApplicationRecord
   # 承認権限チェック
   def can_approve?
     manager?
+  end
+
+  private
+
+  def normalize_blank_fields
+    # 空文字を nil に変換してユニーク制約エラーを防ぐ
+    self.employee_number = nil if employee_number.blank?
+    self.scheduled_start_time = nil if scheduled_start_time.blank?
+    self.scheduled_end_time = nil if scheduled_end_time.blank?
+  end
+
+  def scheduled_times_logical_order
+    return if scheduled_start_time.blank? || scheduled_end_time.blank?
+
+    return unless scheduled_end_time <= scheduled_start_time
+
+    errors.add(:scheduled_end_time, 'は開始時間より後に設定してください')
   end
 end
