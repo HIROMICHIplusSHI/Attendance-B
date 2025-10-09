@@ -2,7 +2,7 @@ class User < ApplicationRecord
   attr_accessor :remember_token
 
   has_many :attendances, dependent: :destroy
-  has_secure_password
+  has_secure_password validations: false
 
   # 組織階層
   belongs_to :manager, class_name: 'User', optional: true
