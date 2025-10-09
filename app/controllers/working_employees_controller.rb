@@ -3,6 +3,11 @@ class WorkingEmployeesController < ApplicationController
   before_action :admin_user
 
   def index
-    # 将来の実装用（feature/34で実装予定）
+    @working_employees = Attendance
+                         .includes(:user)
+                         .where(worked_on: Date.today)
+                         .where.not(started_at: nil)
+                         .where(finished_at: nil)
+                         .order('users.employee_number')
   end
 end
