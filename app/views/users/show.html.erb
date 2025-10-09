@@ -76,6 +76,7 @@
 <% if current_user?(@user) %>
   <div class="btn-users-show">
     <%= link_to "1ヶ月の勤怠編集へ", edit_one_month_user_attendances_path(@user, date: @first_day), class: "btn btn-success", data: { turbo: false } %>
+    <%= link_to "CSVを出力", export_csv_user_path(@user, date: @first_day), class: "btn btn-primary", data: { turbo: false }, onclick: "return confirm('CSVファイルをダウンロードしますか？')" %>
   </div>
 <% end %>
 
