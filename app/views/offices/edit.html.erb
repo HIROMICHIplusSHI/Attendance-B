@@ -2,7 +2,7 @@
 
 <div class="modal-header">
   <h4 class="modal-title">拠点情報編集</h4>
-  <button type="button" class="close" data-action="modal#close">&times;</button>
+  <button type="button" class="close" data-action="form-modal#close">&times;</button>
 </div>
 
 <% if flash[:danger] %>
@@ -12,7 +12,7 @@
 <% end %>
 
 <div class="modal-body">
-  <%= form_with(model: @office, local: true, html: { data: { remote: "true", confirm: "true", confirm_message: "この内容で拠点情報を更新してよろしいですか？" } }) do |f| %>
+  <%= form_with(model: @office, remote: true, html: { data: { confirm: "true", confirm_message: "この内容で拠点情報を更新してよろしいですか？" } }) do |f| %>
 
     <div class="form-group">
       <%= f.label :office_number, '拠点番号' %>
@@ -31,7 +31,7 @@
     </div>
 
     <div class="modal-footer">
-      <button type="button" class="btn btn-default" data-action="modal#close">キャンセル</button>
+      <button type="button" class="btn btn-default" data-action="form-modal#close">キャンセル</button>
       <%= f.submit '更新', class: 'btn btn-primary' %>
     </div>
   <% end %>

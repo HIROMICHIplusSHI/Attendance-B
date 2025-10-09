@@ -7,8 +7,8 @@
 </div>
 
 <div class="row">
-  <div class="col-md-10 col-md-offset-1" data-controller="modal">
-    <%= link_to '拠点情報追加', new_office_path, class: 'btn btn-primary', data: { action: 'modal#open' } %>
+  <div class="col-md-10 col-md-offset-1" data-controller="form-modal">
+    <%= link_to '拠点情報追加', new_office_path, class: 'btn btn-primary', data: { action: 'form-modal#open' } %>
 
     <table class="table table-striped table-bordered" style="margin-top: 20px;">
       <thead>
@@ -24,7 +24,7 @@
         <% @offices.each do |office| %>
           <tr>
             <td class="text-center">
-              <%= link_to '編集', edit_office_path(office), class: 'btn btn-sm btn-primary', data: { action: 'modal#open' } %>
+              <%= link_to '編集', edit_office_path(office), class: 'btn btn-sm btn-primary', data: { action: 'form-modal#open' } %>
             </td>
             <td class="text-center">
               <%= button_to '削除', office_path(office), method: :delete, class: 'btn btn-sm btn-danger', data: { turbo_confirm: 'この拠点情報を削除してもよろしいですか？' } %>
@@ -44,9 +44,9 @@
     <% end %>
 
     <!-- モーダルコンテナ -->
-    <div data-modal-target="container" class="modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1050; background-color: rgba(0,0,0,0.3);" data-action="click->modal#backgroundClick">
+    <div data-form-modal-target="container" class="modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1050; background-color: rgba(0,0,0,0.3);" data-action="click->form-modal#backgroundClick">
       <div class="modal-dialog" style="position: relative; width: auto; margin: 10px auto; max-width: 600px; top: 50%; transform: translateY(-50%);">
-        <div data-modal-target="content" class="modal-content">
+        <div data-form-modal-target="content" class="modal-content">
         </div>
       </div>
     </div>

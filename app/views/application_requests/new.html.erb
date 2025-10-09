@@ -1,6 +1,6 @@
 <div class="modal-header">
   <h4 class="modal-title">勤怠変更・残業申請</h4>
-  <button type="button" class="close" data-action="modal#close">&times;</button>
+  <button type="button" class="close" data-action="form-modal#close">&times;</button>
 </div>
 
 <% if flash[:danger] %>
@@ -12,7 +12,9 @@
 <%= form_with url: user_attendance_application_requests_path(@attendance.user, @attendance),
               scope: :application_request,
               id: "application-request-form",
-              local: true do |f| %>
+              local: true,
+              remote: true,
+              html: { data: { confirm: "true", confirm_message: "この内容で申請してよろしいですか？" } } do |f| %>
   <div class="modal-body">
     <!-- 日付情報 -->
     <div class="form-group">
@@ -102,7 +104,7 @@
   </div>
 
   <div class="modal-footer">
-    <button type="button" class="btn btn-default" data-action="modal#close">キャンセル</button>
-    <%= f.submit "申請", class: "btn btn-primary", data: { turbo_confirm: "この内容で申請してよろしいですか？" } %>
+    <button type="button" class="btn btn-default" data-action="form-modal#close">キャンセル</button>
+    <%= f.submit "申請", class: "btn btn-primary" %>
   </div>
 <% end %>
