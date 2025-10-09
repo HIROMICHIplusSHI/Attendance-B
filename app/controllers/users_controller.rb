@@ -4,11 +4,13 @@ class UsersController < ApplicationController
   include CsvImportable
 
   before_action :logged_in_user,
-                only: %i[index show edit update destroy edit_basic_info update_basic_info import_csv export_csv]
+                only: %i[index show edit update destroy edit_basic_info update_basic_info import_csv export_csv
+                         attendance_log]
   before_action :admin_user, only: %i[index destroy edit_basic_info update_basic_info import_csv]
   before_action :admin_or_correct_user_check, only: %i[edit update]
-  before_action :set_user, only: %i[show edit update destroy edit_basic_info update_basic_info export_csv]
-  before_action :set_one_month, only: %i[show export_csv]
+  before_action :set_user, only: %i[show edit update destroy edit_basic_info update_basic_info export_csv
+                                    attendance_log]
+  before_action :set_one_month, only: %i[show export_csv attendance_log]
 
   def index
     @users = User.all
@@ -94,6 +96,17 @@ class UsersController < ApplicationController
     filename = "#{@user.name}_#{@first_day.strftime('%Y%m')}_勤怠.csv"
 
     send_data csv_data, filename:, type: 'text/csv; charset=utf-8'
+  end
+
+  def attendance_log
+    # 権限制御
+    head :forbidden and return unless current_user?(@user) || current_user.admin?
+
+    @attendance_logs = fetch_attendance_logs
+
+    respond_to do |format|
+      format.html { render layout: false }
+    end
   end
 
   private
@@ -190,5 +203,36 @@ class UsersController < ApplicationController
     return '' unless attendance.started_at && attendance.finished_at
 
     format('%.2f', ((attendance.finished_at - attendance.started_at) / 1.hour))
+  end
+
+  def fetch_attendance_logs
+    approved_requests = fetch_approved_change_requests
+    grouped_requests = approved_requests.group_by(&:attendance_id)
+    logs = build_attendance_logs(grouped_requests)
+    logs.sort_by { |log| log[:worked_on] }
+  end
+
+  def fetch_approved_change_requests
+    @user.attendance_change_requests
+         .joins(:attendance)
+         .where(status: :approved)
+         .where(attendances: { worked_on: @first_day..@last_day })
+         .order(:created_at)
+  end
+
+  def build_attendance_logs(grouped_requests)
+    grouped_requests.map do |_attendance_id, requests|
+      {
+        worked_on: requests.first.attendance.worked_on,
+        changes: requests.map do |req|
+          {
+            before_started_at: req.original_started_at,
+            before_finished_at: req.original_finished_at,
+            after_started_at: req.requested_started_at,
+            after_finished_at: req.requested_finished_at
+          }
+        end
+      }
+    end
   end
 end
