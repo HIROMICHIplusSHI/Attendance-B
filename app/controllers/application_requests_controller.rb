@@ -16,12 +16,7 @@ class ApplicationRequestsController < ApplicationController
     validate_inputs
     return render_with_errors if @errors.any?
 
-    success_messages = []
-    success_messages << "勤怠変更申請" if create_attendance_change_request
-    success_messages << "残業申請" if create_overtime_request
-
-    flash[:success] = build_success_message(success_messages)
-    redirect_to user_path(@attendance.user)
+    request.xhr? ? handle_ajax_create : handle_normal_create
   end
 
   private
@@ -115,5 +110,20 @@ class ApplicationRequestsController < ApplicationController
 
     # "09:30"形式の文字列をTimeオブジェクトに変換
     Time.zone.parse(time_string)
+  end
+
+  def handle_ajax_create
+    # Ajaxリクエスト時はバリデーションのみ（保存しない）
+    head :ok
+  end
+
+  def handle_normal_create
+    # 通常リクエスト時に実際に保存
+    success_messages = []
+    success_messages << "勤怠変更申請" if create_attendance_change_request
+    success_messages << "残業申請" if create_overtime_request
+
+    flash[:success] = build_success_message(success_messages)
+    redirect_to user_path(@attendance.user)
   end
 end
