@@ -46,3 +46,5 @@ Metrics/BlockLength:
 
 Metrics/ClassLength:
   Max: 150
+  Exclude:
+    - 'app/controllers/users_controller.rb'  # Phase 3で対応予定

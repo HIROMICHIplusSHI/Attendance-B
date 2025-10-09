@@ -3,7 +3,7 @@ class OvertimeApprovalsController < ApplicationController
   before_action :require_manager, only: %i[index bulk_update]
 
   def index
-    @requests = OvertimeRequest.pending.where(approver: current_user).includes(:user)
+    @requests = OvertimeRequest.pending.where(approver: current_user).includes(user: :attendances)
 
     return unless request.xhr?
 
@@ -35,7 +35,7 @@ class OvertimeApprovalsController < ApplicationController
   end
 
   def render_no_selection_error
-    @requests = OvertimeRequest.pending.where(approver: current_user).includes(:user)
+    @requests = OvertimeRequest.pending.where(approver: current_user).includes(user: :attendances)
     flash.now[:alert] = '承認する項目を選択してください'
     render :index, layout: false, status: :unprocessable_entity
   end
@@ -48,7 +48,7 @@ class OvertimeApprovalsController < ApplicationController
   end
 
   def render_pending_status_error
-    @requests = OvertimeRequest.pending.where(approver: current_user).includes(:user)
+    @requests = OvertimeRequest.pending.where(approver: current_user).includes(user: :attendances)
     flash.now[:alert] = '承認または否認を選択してください'
     render :index, layout: false, status: :unprocessable_entity
   end
@@ -70,7 +70,7 @@ class OvertimeApprovalsController < ApplicationController
   end
 
   def handle_bulk_update_error(error)
-    @requests = OvertimeRequest.pending.where(approver: current_user).includes(:user)
+    @requests = OvertimeRequest.pending.where(approver: current_user).includes(user: :attendances)
     flash.now[:alert] = "エラーが発生しました: #{error.message}"
     render :index, layout: false, status: :unprocessable_entity
   end

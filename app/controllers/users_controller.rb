@@ -139,7 +139,10 @@ class UsersController < ApplicationController
     @attendances = result[:attendances]
     @worked_sum = result[:worked_sum]
     @total_working_times = result[:total_working_times]
-    @overtime_requests = @user.overtime_requests.where(worked_on: @first_day..@last_day).index_by(&:worked_on)
+    @overtime_requests = @user.overtime_requests
+                              .includes(:approver)
+                              .where(worked_on: @first_day..@last_day)
+                              .index_by(&:worked_on)
   end
 
   def user_params
