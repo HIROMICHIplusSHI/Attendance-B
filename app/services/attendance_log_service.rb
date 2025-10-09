@@ -16,9 +16,10 @@ class AttendanceLogService
 
   def fetch_approved_change_requests
     @user.attendance_change_requests
-         .joins(:attendance)
+         .includes(:attendance)
          .where(status: :approved)
          .where(attendances: { worked_on: @first_day..@last_day })
+         .references(:attendances)
          .order(:created_at)
   end
 
