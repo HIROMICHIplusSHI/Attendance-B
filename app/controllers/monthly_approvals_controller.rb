@@ -17,24 +17,17 @@ class MonthlyApprovalsController < ApplicationController
     return render_no_selection_error if selected_approvals.empty?
     return render_pending_status_error if pending_status?(selected_approvals)
 
-    process_bulk_update(selected_approvals)
-    handle_bulk_update_success
+    request.xhr? ? handle_ajax_update : handle_normal_update(selected_approvals)
+    # removed
   rescue ActiveRecord::RecordInvalid => e
     handle_bulk_update_error(e)
   end
 
   def create
-    # 既存の申請があれば上書き（再承認対応）
-    @approval = @user.monthly_approvals.find_or_initialize_by(
-      target_month: approval_params[:target_month]
-    )
+    prepare_approval
+    return handle_validation_error unless @approval.valid?
 
-    @approval.approver_id = approval_params[:approver_id]
-    @approval.status = :pending
-    @approval.approved_at = nil
-
-    set_flash_message
-    redirect_to @user
+    request.xhr? ? handle_ajax_create : handle_normal_create
   end
 
   private
@@ -43,12 +36,37 @@ class MonthlyApprovalsController < ApplicationController
     @user = User.find(params[:user_id])
   end
 
-  def set_flash_message
+  def prepare_approval
+    @approval = @user.monthly_approvals.find_or_initialize_by(
+      target_month: approval_params[:target_month]
+    )
+    @approval.approver_id = approval_params[:approver_id]
+    @approval.status = :pending
+    @approval.approved_at = nil
+  end
+
+  def handle_validation_error
+    if request.xhr?
+      head :unprocessable_entity
+    else
+      flash[:danger] = "申請に失敗しました: #{@approval.errors.full_messages.uniq.join(', ')}"
+      redirect_to @user
+    end
+  end
+
+  def handle_ajax_create
+    # Ajaxリクエスト時はバリデーションのみ（保存しない）
+    head :ok
+  end
+
+  def handle_normal_create
+    # 通常リクエスト時に実際に保存
     if @approval.save
       flash[:success] = "#{format_target_month}の勤怠を申請しました。"
     else
       flash[:danger] = "申請に失敗しました: #{@approval.errors.full_messages.join(', ')}"
     end
+    redirect_to @user
   end
 
   def format_target_month
@@ -99,6 +117,17 @@ class MonthlyApprovalsController < ApplicationController
         approval.update!(status: attrs[:status])
       end
     end
+  end
+
+  def handle_ajax_update
+    # Ajaxリクエスト時はバリデーションのみ（保存しない）
+    head :ok
+  end
+
+  def handle_normal_update(selected_approvals)
+    # 通常リクエスト時に実際に保存
+    process_bulk_update(selected_approvals)
+    handle_bulk_update_success
   end
 
   def handle_bulk_update_success

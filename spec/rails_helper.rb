@@ -16,6 +16,9 @@ end
 Capybara.default_host = 'http://localhost'
 Capybara.always_include_port = true
 
+# Support filesを読み込む
+Dir[Rails.root.join('spec/support/**/*.rb')].each { |f| require f }
+
 RSpec.configure do |config|
   config.fixture_paths = ["#{Rails.root}/spec/fixtures"]
   config.use_transactional_fixtures = true
@@ -38,8 +41,14 @@ RSpec.configure do |config|
   end
 
   # システムテスト用のドライバー設定
-  config.before(:each, type: :system) do
-    driven_by :rack_test
+  config.before(:each, type: :system) do |example|
+    if example.metadata[:js]
+      # JavaScript有効なテストはリモートChromeを使用
+      driven_by :remote_chrome
+    else
+      # JavaScript不要なテストはrack_testで高速実行
+      driven_by :rack_test
+    end
   end
 
   # RequestテストでCSRF保護を無効化とホスト設定

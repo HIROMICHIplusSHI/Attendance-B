@@ -290,6 +290,53 @@ RSpec.describe "MonthlyApprovals", type: :request do
           expect(approval1.reload.status).to eq('pending')
         end
       end
+
+      context 'Ajaxリクエストの場合（Feature/31パターン）' do
+        let(:valid_params) do
+          {
+            approvals: {
+              approval1.id.to_s => { selected: '1', status: 'approved' },
+              approval2.id.to_s => { selected: '1', status: 'rejected' }
+            }
+          }
+        end
+
+        it 'バリデーション成功時はステータス200を返すこと' do
+          patch bulk_update_monthly_approvals_path, params: valid_params, xhr: true
+
+          expect(response).to have_http_status(:ok)
+        end
+
+        it 'バリデーション成功時はデータを保存しないこと' do
+          expect do
+            patch bulk_update_monthly_approvals_path, params: valid_params, xhr: true
+          end.not_to(change { approval1.reload.status })
+        end
+
+        it 'チェックされた項目がない場合は422を返すこと' do
+          no_selection_params = {
+            approvals: {
+              approval1.id.to_s => { selected: '0', status: 'approved' }
+            }
+          }
+
+          patch bulk_update_monthly_approvals_path, params: no_selection_params, xhr: true
+
+          expect(response).to have_http_status(:unprocessable_entity)
+        end
+
+        it '承認/否認が未選択の場合は422を返すこと' do
+          pending_status_params = {
+            approvals: {
+              approval1.id.to_s => { selected: '1', status: 'pending' }
+            }
+          }
+
+          patch bulk_update_monthly_approvals_path, params: pending_status_params, xhr: true
+
+          expect(response).to have_http_status(:unprocessable_entity)
+        end
+      end
     end
 
     context 'マネージャー権限がない場合' do

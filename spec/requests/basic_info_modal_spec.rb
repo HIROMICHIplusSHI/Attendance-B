@@ -252,7 +252,7 @@ RSpec.describe "BasicInfoModal", type: :request do
       # 一般ユーザーは基本情報編集リンクを見ることができない（管理者専用）
       expect(response.body).not_to include('edit_basic_info')
       # ただしモーダルコンテナ自体は存在する
-      expect(response.body).to include('data-controller="modal"')
+      expect(response.body).to include('data-controller="form-modal"')
     end
 
     it "モーダル用のコンテナが存在する" do
@@ -261,8 +261,8 @@ RSpec.describe "BasicInfoModal", type: :request do
       get user_path(general_user)
       expect(response).to have_http_status(:success)
       # 自分のページにはモーダルコンテナが存在する
-      expect(response.body).to include('data-controller="modal"')
-      expect(response.body).to include('data-modal-target="container"')
+      expect(response.body).to include('data-controller="form-modal"')
+      expect(response.body).to include('data-form-modal-target="container"')
     end
 
     it "基本情報編集ページがAJAXレスポンスに対応している" do
@@ -279,7 +279,7 @@ RSpec.describe "BasicInfoModal", type: :request do
 
     it "閉じるボタンがStimulus actionを使用している" do
       get edit_basic_info_user_path(general_user)
-      expect(response.body).to include('data-action="modal#close"')
+      expect(response.body).to include('data-action="form-modal#close"')
     end
 
     it "モーダルコンテンツにラッパーdivが含まれていない（二重モーダル防止）" do

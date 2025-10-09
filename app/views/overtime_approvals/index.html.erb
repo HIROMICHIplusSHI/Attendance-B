@@ -1,6 +1,6 @@
 <div class="modal-header">
   <h4 class="modal-title">残業申請の承認</h4>
-  <button type="button" class="close" data-action="modal#close">&times;</button>
+  <button type="button" class="close" data-action="bulk-modal#close">&times;</button>
 </div>
 
 <% if flash[:notice] %>
@@ -16,7 +16,9 @@
 <% end %>
 
 <%= form_with url: bulk_update_overtime_approvals_path, method: :patch,
-              local: true do |f| %>
+              local: true,
+              remote: true,
+              html: { data: { confirm: "true", confirm_message: "変更内容を送信してよろしいですか？" } } do |f| %>
   <!-- クライアントサイドバリデーションエラー表示エリア -->
   <div id="validation-errors" class="alert alert-danger" style="margin: 15px; display: none;"></div>
 
@@ -91,7 +93,7 @@
   </div>
 
   <div class="modal-footer">
-    <button type="button" class="btn btn-default" data-action="modal#close">キャンセル</button>
+    <button type="button" class="btn btn-default" data-action="bulk-modal#close">キャンセル</button>
     <% if @requests.any? %>
       <%= f.submit "変更を送信する", class: "btn btn-primary", data: { turbo_confirm: "変更内容を送信してよろしいですか？" } %>
     <% end %>

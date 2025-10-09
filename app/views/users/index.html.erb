@@ -15,7 +15,7 @@
       </div>
       <%= f.submit "検索", class: "btn btn-primary btn-sm" %>
       <% if params[:search].present? %>
-        <%= link_to "リセット", users_path, class: "btn btn-default btn-sm" %>
+        <%= link_to "リセット", users_path, class: "btn btn-primary btn-sm" %>
       <% end %>
     <% end %>
   </div>
@@ -36,7 +36,7 @@
             </div>
             <div class="form-group" style="margin-top: 15px;">
               <%= f.submit "CSVをインポート", class: "btn btn-primary" %>
-              <button type="button" class="btn btn-default" data-action="click->collapse#toggle">
+              <button type="button" class="btn btn-primary" data-action="click->collapse#toggle">
                 <span class="glyphicon glyphicon-question-sign"></span> CSVフォーマットを確認する
               </button>
             </div>
@@ -77,8 +77,8 @@ E101,小林一郎,kobayashi@example.com,password123,employee,M100</code></pre>
   <div class="pagination-wrapper" style="margin-bottom: 20px;">
     <div class="btn-group" role="group" aria-label="ページナビゲーション">
       <% if @users.current_page > 1 %>
-        <%= link_to "最初", users_path(search: params[:search]), class: "btn btn-default btn-sm" %>
-        <%= link_to "前", users_path(page: @users.prev_page, search: params[:search]), class: "btn btn-default btn-sm" %>
+        <%= link_to "最初", users_path(search: params[:search]), class: "btn btn-primary btn-sm" %>
+        <%= link_to "前", users_path(page: @users.prev_page, search: params[:search]), class: "btn btn-primary btn-sm" %>
       <% end %>
 
       <% (@users.current_page - 2..@users.current_page + 2).each do |page| %>
@@ -86,14 +86,14 @@ E101,小林一郎,kobayashi@example.com,password123,employee,M100</code></pre>
           <% if page == @users.current_page %>
             <span class="btn btn-primary btn-sm active"><%= page %></span>
           <% else %>
-            <%= link_to page, users_path(page: page, search: params[:search]), class: "btn btn-default btn-sm" %>
+            <%= link_to page, users_path(page: page, search: params[:search]), class: "btn btn-primary btn-sm" %>
           <% end %>
         <% end %>
       <% end %>
 
       <% if @users.current_page < @users.total_pages %>
-        <%= link_to "次", users_path(page: @users.next_page, search: params[:search]), class: "btn btn-default btn-sm" %>
-        <%= link_to "最後", users_path(page: @users.total_pages, search: params[:search]), class: "btn btn-default btn-sm" %>
+        <%= link_to "次", users_path(page: @users.next_page, search: params[:search]), class: "btn btn-primary btn-sm" %>
+        <%= link_to "最後", users_path(page: @users.total_pages, search: params[:search]), class: "btn btn-primary btn-sm" %>
       <% end %>
     </div>
   </div>
