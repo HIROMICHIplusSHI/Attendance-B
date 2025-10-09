@@ -4,12 +4,13 @@ class UsersController < ApplicationController
   include CsvImportable
 
   before_action :logged_in_user,
-                only: %i[index show edit update destroy edit_basic_info update_basic_info import_csv export_csv
-                         attendance_log]
-  before_action :admin_user, only: %i[index destroy edit_basic_info update_basic_info import_csv]
+                only: %i[index show edit update destroy edit_basic_info update_basic_info edit_admin update_admin
+                         import_csv export_csv attendance_log]
+  before_action :admin_user, only: %i[index destroy edit_basic_info update_basic_info edit_admin update_admin
+                                      import_csv]
   before_action :admin_or_correct_user_check, only: %i[edit update]
-  before_action :set_user, only: %i[show edit update destroy edit_basic_info update_basic_info export_csv
-                                    attendance_log]
+  before_action :set_user, only: %i[show edit update destroy edit_basic_info update_basic_info edit_admin
+                                    update_admin export_csv attendance_log]
   before_action :set_one_month, only: %i[show export_csv attendance_log]
 
   def index
@@ -110,6 +111,20 @@ class UsersController < ApplicationController
     end
   end
 
+  def edit_admin
+    respond_to do |format|
+      format.html { render layout: false if request.xhr? }
+    end
+  end
+
+  def update_admin
+    if @user.update(admin_edit_params)
+      handle_admin_update_success
+    else
+      handle_admin_update_failure
+    end
+  end
+
   private
 
   def set_user
@@ -135,6 +150,22 @@ class UsersController < ApplicationController
     params.require(:user).permit(:department, :basic_time, :work_time, :role, :employee_number)
   end
 
+  def admin_edit_params
+    permitted = params.require(:user).permit(
+      :name, :email, :department, :employee_number,
+      :password, :password_confirmation,
+      :basic_time, :work_time,
+      :scheduled_start_time, :scheduled_end_time,
+      :role
+      # card_id は意図的に除外（未実装）
+    )
+
+    # 管理者への変更を防ぐ
+    permitted[:role] = @user.role if permitted[:role] == 'admin'
+
+    permitted
+  end
+
   def admin_or_correct_user_check
     return if current_user&.admin?
 
@@ -143,5 +174,20 @@ class UsersController < ApplicationController
 
     flash[:danger] = "アクセス権限がありません。"
     redirect_to(root_path)
+  end
+
+  def handle_admin_update_success
+    flash[:success] = "#{@user.name} の情報を更新しました。"
+    respond_to do |format|
+      format.html { redirect_to users_path }
+      format.json { render json: { status: 'success', message: flash[:success], redirect_url: users_path } }
+    end
+  end
+
+  def handle_admin_update_failure
+    respond_to do |format|
+      format.html { render 'edit_admin', layout: request.xhr? ? false : 'application' }
+      format.json { render json: { status: 'error', errors: @user.errors } }
+    end
   end
 end

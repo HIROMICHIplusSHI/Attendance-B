@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2025_10_09_011245) do
+ActiveRecord::Schema[7.1].define(version: 2025_10_09_115813) do
   create_table "attendance_change_requests", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.bigint "attendance_id", null: false
     t.bigint "requester_id", null: false
@@ -90,6 +90,10 @@ ActiveRecord::Schema[7.1].define(version: 2025_10_09_011245) do
     t.bigint "manager_id"
     t.integer "role", default: 0, null: false
     t.string "employee_number"
+    t.time "scheduled_start_time", comment: "指定勤務開始時間（会社規則表示用）"
+    t.time "scheduled_end_time", comment: "指定勤務終了時間（会社規則表示用）"
+    t.string "card_id", comment: "ICカードID（未実装）"
+    t.index ["card_id"], name: "index_users_on_card_id", unique: true
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["employee_number"], name: "index_users_on_employee_number", unique: true
     t.index ["manager_id"], name: "index_users_on_manager_id"

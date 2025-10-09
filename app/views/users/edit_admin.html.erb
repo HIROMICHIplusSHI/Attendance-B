@@ -1,0 +1,109 @@
+<% provide(:title, "ユーザー編集（管理者）") %>
+
+<div class="panel panel-default" style="margin: 10px 0;">
+  <div class="panel-heading">
+    <h5>ユーザー編集: <%= @user.name %></h5>
+  </div>
+  <div class="panel-body">
+    <%= form_with(model: @user, url: update_admin_user_path(@user), method: :patch, local: false) do |f| %>
+      <%= render 'shared/error_messages', object: @user %>
+
+      <!-- 基本情報セクション -->
+      <h5 style="margin-top: 0;">基本情報</h5>
+      <div class="row">
+        <div class="col-md-6">
+          <%= f.label :name, "名前" %>
+          <%= f.text_field :name, class: "form-control" %>
+        </div>
+        <div class="col-md-6">
+          <%= f.label :email, "メールアドレス" %>
+          <%= f.email_field :email, class: "form-control" %>
+        </div>
+      </div>
+
+      <div class="row" style="margin-top: 15px;">
+        <div class="col-md-6">
+          <%= f.label :department, "所属" %>
+          <%= f.text_field :department, class: "form-control" %>
+        </div>
+        <div class="col-md-6">
+          <%= f.label :employee_number, "社員番号" %>
+          <%= f.text_field :employee_number, class: "form-control", readonly: @user.employee_number.present? %>
+          <% if @user.employee_number.present? %>
+            <small class="text-muted">※一度設定すると変更できません</small>
+          <% end %>
+        </div>
+      </div>
+
+      <div class="row" style="margin-top: 15px;">
+        <div class="col-md-6">
+          <%= f.label :role, "役割" %>
+          <%= f.select :role,
+              [
+                [I18n.t("enums.user.role.employee"), "employee"],
+                [I18n.t("enums.user.role.manager"), "manager"]
+              ],
+              {},
+              class: "form-control" %>
+          <small class="text-muted">※管理者への変更は別機能で対応</small>
+        </div>
+        <div class="col-md-6">
+          <%= f.label :card_id, "カードID" %>
+          <%= f.text_field :card_id, class: "form-control", disabled: true, value: @user.card_id || "（未実装）" %>
+          <small class="text-muted">※未実装機能</small>
+        </div>
+      </div>
+
+      <!-- パスワード変更セクション -->
+      <h5 style="margin-top: 20px;">パスワード変更（任意）</h5>
+      <div class="row">
+        <div class="col-md-6">
+          <%= f.label :password, "新しいパスワード" %>
+          <%= f.password_field :password, class: "form-control", placeholder: "変更する場合のみ入力" %>
+        </div>
+        <div class="col-md-6">
+          <%= f.label :password_confirmation, "パスワード確認" %>
+          <%= f.password_field :password_confirmation, class: "form-control", placeholder: "確認のため再入力" %>
+        </div>
+      </div>
+
+      <!-- 勤務時間（計算用）セクション -->
+      <h5 style="margin-top: 20px;">勤務時間設定（計算用）</h5>
+      <div class="row">
+        <div class="col-md-6">
+          <%= f.label :basic_time, "基本時間（時間の長さ）" %>
+          <%= f.time_field :basic_time, class: "form-control" %>
+          <small class="text-muted">勤怠計算ロジックで使用（例: 08:00 = 8時間）</small>
+        </div>
+        <div class="col-md-6">
+          <%= f.label :work_time, "指定勤務時間（時間の長さ）" %>
+          <%= f.time_field :work_time, class: "form-control" %>
+          <small class="text-muted">勤怠計算ロジックで使用（例: 07:30 = 7.5時間）</small>
+        </div>
+      </div>
+
+      <!-- 勤務時間（表示用）セクション -->
+      <h5 style="margin-top: 20px;">指定勤務時間（会社規則表示用）</h5>
+      <div class="row">
+        <div class="col-md-6">
+          <%= f.label :scheduled_start_time, "開始時刻" %>
+          <%= f.time_field :scheduled_start_time, class: "form-control" %>
+          <small class="text-muted">会社規則の表示用（例: 09:00）</small>
+        </div>
+        <div class="col-md-6">
+          <%= f.label :scheduled_end_time, "終了時刻" %>
+          <%= f.time_field :scheduled_end_time, class: "form-control" %>
+          <small class="text-muted">会社規則の表示用（例: 18:00）</small>
+        </div>
+      </div>
+
+      <!-- ボタン -->
+      <div class="form-group" style="margin-top: 20px; margin-bottom: 0;">
+        <%= f.submit "更新", class: "btn btn-primary" %>
+        <button type="button" class="btn btn-default" data-action="click->accordion#closeWithConfirm">
+          キャンセル
+        </button>
+      </div>
+    <% end %>
+  </div>
+</div>

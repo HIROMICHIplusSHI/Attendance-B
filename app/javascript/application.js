@@ -5,6 +5,7 @@ import ModalController from "controllers/modal_controller"
 import FormModalController from "controllers/form_modal_controller"
 import BulkModalController from "controllers/bulk_modal_controller"
 import CollapseController from "controllers/collapse_controller"
+import AccordionController from "controllers/accordion_controller"
 
 // Turboをグローバルに露出
 window.Turbo = Turbo;
@@ -15,6 +16,7 @@ application.register("modal", ModalController)
 application.register("form-modal", FormModalController)
 application.register("bulk-modal", BulkModalController)
 application.register("collapse", CollapseController)
+application.register("accordion", AccordionController)
 window.Stimulus = application
 
 /**
