@@ -24,26 +24,8 @@ class MonthlyApprovalsController < ApplicationController
   end
 
   def create
-    # 既存の申請があれば上書き（再承認対応）
-    @approval = @user.monthly_approvals.find_or_initialize_by(
-      target_month: approval_params[:target_month]
-    )
-
-    @approval.approver_id = approval_params[:approver_id]
-    @approval.status = :pending
-    @approval.approved_at = nil
-
-    # バリデーション
-    unless @approval.valid?
-      if request.xhr?
-        # Ajaxリクエスト時はエラーレスポンスを返す
-        head :unprocessable_entity
-      else
-        flash[:danger] = "申請に失敗しました: #{@approval.errors.full_messages.uniq.join(', ')}"
-        redirect_to @user
-      end
-      return
-    end
+    prepare_approval
+    return handle_validation_error unless @approval.valid?
 
     request.xhr? ? handle_ajax_create : handle_normal_create
   end
@@ -52,6 +34,24 @@ class MonthlyApprovalsController < ApplicationController
 
   def set_user
     @user = User.find(params[:user_id])
+  end
+
+  def prepare_approval
+    @approval = @user.monthly_approvals.find_or_initialize_by(
+      target_month: approval_params[:target_month]
+    )
+    @approval.approver_id = approval_params[:approver_id]
+    @approval.status = :pending
+    @approval.approved_at = nil
+  end
+
+  def handle_validation_error
+    if request.xhr?
+      head :unprocessable_entity
+    else
+      flash[:danger] = "申請に失敗しました: #{@approval.errors.full_messages.uniq.join(', ')}"
+      redirect_to @user
+    end
   end
 
   def handle_ajax_create

@@ -22,7 +22,7 @@ Capybara.register_driver :remote_chrome do |app|
     app,
     browser: :remote,
     url: ENV.fetch('SELENIUM_REMOTE_URL', 'http://chrome:4444/wd/hub'),
-    options: options
+    options:
   )
 end
 
@@ -30,8 +30,8 @@ end
 Capybara.javascript_driver = :remote_chrome
 
 # デフォルト設定
-Capybara.default_max_wait_time = 10  # Ajax待機時間（秒）
-Capybara.default_normalize_ws = true  # 空白文字を正規化
+Capybara.default_max_wait_time = 10 # Ajax待機時間（秒）
+Capybara.default_normalize_ws = true # 空白文字を正規化
 
 # スクリーンショット保存設定
 Capybara.save_path = Rails.root.join('tmp/screenshots')
