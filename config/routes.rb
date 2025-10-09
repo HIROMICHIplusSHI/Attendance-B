@@ -28,6 +28,7 @@ Rails.application.routes.draw do
       get 'edit_basic_info'
       patch 'update_basic_info'
       get 'export_csv'
+      get 'attendance_log'
     end
     resources :attendances, only: [:update] do
       collection do
