@@ -313,13 +313,13 @@ RSpec.describe "ApplicationRequests", type: :request do
       it "ユーザー詳細ページにモーダル開くリンクが表示される" do
         get user_path(user)
         expect(response.body).to include('残業申請')
-        expect(response.body).to include('data-action="modal#open"')
+        expect(response.body).to include('data-action="form-modal#open"')
       end
 
       it "モーダル用のコンテナが存在する" do
         get user_path(user)
-        expect(response.body).to include('data-controller="modal"')
-        expect(response.body).to include('data-modal-target="container"')
+        expect(response.body).to include('data-controller="form-modal"')
+        expect(response.body).to include('data-form-modal-target="container"')
       end
 
       it "申請ページがAJAXレスポンスに対応している" do
@@ -331,12 +331,13 @@ RSpec.describe "ApplicationRequests", type: :request do
 
       it "フォームに確認ダイアログ属性が設定されている" do
         get new_user_attendance_application_request_path(user, attendance)
-        expect(response.body).to include('data-turbo-confirm="この内容で申請してよろしいですか？"')
+        expect(response.body).to include('data-confirm="true"')
+        expect(response.body).to include('data-confirm-message="この内容で申請してよろしいですか？"')
       end
 
       it "閉じるボタンがStimulus actionを使用している" do
         get new_user_attendance_application_request_path(user, attendance)
-        expect(response.body).to include('data-action="modal#close"')
+        expect(response.body).to include('data-action="form-modal#close"')
       end
 
       it "モーダルコンテンツにラッパーdivが含まれていない（二重モーダル防止）" do
