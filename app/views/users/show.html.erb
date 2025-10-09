@@ -12,8 +12,14 @@
           <%= link_to "⇨", user_path(date: @first_day.next_month), class: "btn btn-primary btn-sm", style: "margin-left: 10px;" %>
         <% end %>
       </td>
-      <td>指定勤務時間：<%= format_basic_info(@user.work_time) %></td>
-      <td>基本時間：<%= format_basic_info(@user.basic_time) %></td>
+      <td>
+        指定勤務開始：<%= @user.scheduled_start_time&.strftime("%H:%M") || "未設定" %> /
+        指定勤務終了：<%= @user.scheduled_end_time&.strftime("%H:%M") || "未設定" %>
+      </td>
+      <td>
+        指定勤務時間：<%= format_basic_info(@user.work_time) %> /
+        基本時間：<%= format_basic_info(@user.basic_time) %>
+      </td>
       <td>月初日：<%= @first_day.present? ? l(@first_day, format: :short) : "なし" %></td>
     </tr>
 

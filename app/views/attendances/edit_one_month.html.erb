@@ -24,8 +24,14 @@
       <tr>
         <td>名前：<%= @user.name %></td>
         <td>所属：<%= @user.department.present? ? @user.department : "未設定" %></td>
-        <td>基本時間：<%= format_basic_info(@user.basic_time) %></td>
-        <td>指定勤務時間：<%= format_basic_info(@user.work_time) %></td>
+        <td>
+          指定勤務開始：<%= @user.scheduled_start_time&.strftime("%H:%M") || "未設定" %> /
+          指定勤務終了：<%= @user.scheduled_end_time&.strftime("%H:%M") || "未設定" %>
+        </td>
+        <td>
+          指定勤務時間：<%= format_basic_info(@user.work_time) %> /
+          基本時間：<%= format_basic_info(@user.basic_time) %>
+        </td>
       </tr>
     </table>
   </div>
