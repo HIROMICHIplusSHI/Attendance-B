@@ -21,6 +21,57 @@
   </div>
 </div>
 
+<!-- CSVインポートセクション（管理者のみ表示） -->
+<% if current_user.admin? %>
+  <div class="row" style="margin-top: 20px;">
+    <div class="col-md-10 col-md-offset-1">
+      <div class="panel panel-default">
+        <div class="panel-heading">
+          <h4 class="panel-title">CSVインポート</h4>
+        </div>
+        <div class="panel-body" data-controller="collapse">
+          <%= form_with url: import_csv_users_path, method: :post, local: true, multipart: true do |f| %>
+            <div class="form-group">
+              <%= f.file_field :file, accept: 'text/csv', class: "form-control", style: "height: auto; padding: 6px 12px;" %>
+            </div>
+            <div class="form-group" style="margin-top: 15px;">
+              <%= f.submit "CSVをインポート", class: "btn btn-primary" %>
+              <button type="button" class="btn btn-default" data-action="click->collapse#toggle">
+                <span class="glyphicon glyphicon-question-sign"></span> CSVフォーマットを確認する
+              </button>
+            </div>
+          <% end %>
+
+          <hr>
+
+          <div style="display: none;" data-collapse-target="content">
+            <h5>CSVフォーマット</h5>
+            <p class="text-muted">以下の形式でCSVファイルを作成してください。ヘッダー行は必須です。</p>
+            <pre><code>社員番号,氏名,メールアドレス,パスワード,役割,上長社員番号
+E100,伊藤太郎,ito@example.com,password123,employee,
+M100,木村花子,kimura@example.com,password123,manager,
+E101,小林一郎,kobayashi@example.com,password123,employee,M100</code></pre>
+
+            <h5>項目説明</h5>
+            <ul class="text-muted">
+              <li><strong>社員番号</strong>: 必須。一意の識別番号</li>
+              <li><strong>氏名</strong>: 必須。50文字以内</li>
+              <li><strong>メールアドレス</strong>: 必須。重複不可</li>
+              <li><strong>パスワード</strong>: 必須。6文字以上</li>
+              <li><strong>役割</strong>: 必須。employee（一般社員）/ manager（上長）/ admin（管理者）のいずれか</li>
+              <li><strong>上長社員番号</strong>: 任意。存在する社員番号を指定</li>
+            </ul>
+
+            <p class="text-info">
+              <strong>注意:</strong> 基本時間（08:00）と指定勤務時間（07:30）はデフォルト値が自動設定されます。個別調整は基本情報編集から行ってください。
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+<% end %>
+
 <div class="col-md-10 col-md-offset-1">
   <!-- ページネーション（上部左・ボタン化） -->
   <div class="pagination-wrapper" style="margin-bottom: 20px;">
