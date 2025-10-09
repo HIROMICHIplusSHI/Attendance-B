@@ -9,6 +9,7 @@ ja:
     models:
       user: ユーザー
       attendance: 勤怠
+      office: 拠点
     attributes:
       user:
         name: 名前
@@ -25,6 +26,10 @@ ja:
         started_at: 出勤時間
         finished_at: 退勤時間
         note: 備考
+      office:
+        office_number: 拠点番号
+        name: 拠点名
+        attendance_type: 勤怠種類
   date:
     formats:
       default: "%Y/%m/%d"

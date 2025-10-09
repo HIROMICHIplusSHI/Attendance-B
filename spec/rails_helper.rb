@@ -22,6 +22,9 @@ RSpec.configure do |config|
   config.infer_spec_type_from_file_location!
   config.filter_rails_from_backtrace!
 
+  # FactoryBotのメソッドをinclude
+  config.include FactoryBot::Syntax::Methods
+
   # 各テスト前にデータベースをクリーンアップ
   config.before(:each) do
     AttendanceChangeRequest.delete_all
@@ -31,6 +34,7 @@ RSpec.configure do |config|
     # manager_idの外部キー制約があるため、先にmanager_idをnullに設定
     User.update_all(manager_id: nil)
     User.delete_all
+    Office.delete_all
   end
 
   # システムテスト用のドライバー設定
