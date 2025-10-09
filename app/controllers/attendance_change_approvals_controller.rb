@@ -16,8 +16,7 @@ class AttendanceChangeApprovalsController < ApplicationController
     return render_no_selection_error if selected_requests.empty?
     return render_pending_status_error if pending_status?(selected_requests)
 
-    process_bulk_update(selected_requests)
-    handle_bulk_update_success
+    request.xhr? ? handle_ajax_update : handle_normal_update(selected_requests)
   rescue ActiveRecord::RecordInvalid => e
     handle_bulk_update_error(e)
   end
@@ -72,6 +71,17 @@ class AttendanceChangeApprovalsController < ApplicationController
         )
       end
     end
+  end
+
+  def handle_ajax_update
+    # Ajaxリクエスト時はバリデーションのみ（保存しない）
+    head :ok
+  end
+
+  def handle_normal_update(selected_requests)
+    # 通常リクエスト時に実際に保存
+    process_bulk_update(selected_requests)
+    handle_bulk_update_success
   end
 
   def handle_bulk_update_success
