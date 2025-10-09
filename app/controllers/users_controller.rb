@@ -119,16 +119,9 @@ class UsersController < ApplicationController
 
   def update_admin
     if @user.update(admin_edit_params)
-      flash[:success] = "#{@user.name} の情報を更新しました。"
-      respond_to do |format|
-        format.html { redirect_to users_path }
-        format.json { render json: { status: 'success', message: flash[:success], redirect_url: users_path } }
-      end
+      handle_admin_update_success
     else
-      respond_to do |format|
-        format.html { render 'edit_admin', layout: request.xhr? ? false : 'application' }
-        format.json { render json: { status: 'error', errors: @user.errors } }
-      end
+      handle_admin_update_failure
     end
   end
 
@@ -181,5 +174,20 @@ class UsersController < ApplicationController
 
     flash[:danger] = "アクセス権限がありません。"
     redirect_to(root_path)
+  end
+
+  def handle_admin_update_success
+    flash[:success] = "#{@user.name} の情報を更新しました。"
+    respond_to do |format|
+      format.html { redirect_to users_path }
+      format.json { render json: { status: 'success', message: flash[:success], redirect_url: users_path } }
+    end
+  end
+
+  def handle_admin_update_failure
+    respond_to do |format|
+      format.html { render 'edit_admin', layout: request.xhr? ? false : 'application' }
+      format.json { render json: { status: 'error', errors: @user.errors } }
+    end
   end
 end
