@@ -62,7 +62,7 @@ class ApplicationRequestsController < ApplicationController
     flash.now[:danger] = @errors.join("<br>").html_safe
     respond_to do |format|
       format.html { render :new, status: :unprocessable_entity, layout: request.xhr? ? false : 'application' }
-      format.json { render json: { status: 'error', errors: @errors }, status: :unprocessable_entity }
+      format.json { render_error_json(@errors) }
     end
   end
 

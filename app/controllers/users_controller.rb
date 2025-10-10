@@ -85,7 +85,7 @@ class UsersController < ApplicationController
     else
       respond_to do |format|
         format.html { render 'edit_basic_info', layout: request.xhr? ? false : 'application' }
-        format.json { render json: { status: 'error', errors: @user.errors } }
+        format.json { render_error_json(@user.errors) }
       end
     end
   end
@@ -190,7 +190,7 @@ class UsersController < ApplicationController
   def handle_admin_update_failure
     respond_to do |format|
       format.html { render 'edit_admin', layout: request.xhr? ? false : 'application' }
-      format.json { render json: { status: 'error', errors: @user.errors } }
+      format.json { render_error_json(@user.errors) }
     end
   end
 end

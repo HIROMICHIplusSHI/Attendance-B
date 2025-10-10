@@ -92,17 +92,24 @@ export class ErrorHandler {
   /**
    * バリデーションエラーをフォーマット
    * @param {object} errors - Railsから返されたエラーオブジェクト
-   * @param {object} fieldNames - フィールド名の日本語マッピング
+   * @param {object} fieldNames - フィールド名の日本語マッピング（オプション）
    * @returns {string} フォーマットされたエラーメッセージ
    */
   static formatValidationErrors(errors, fieldNames = {}) {
     const errorMessages = []
 
     for (const [field, messages] of Object.entries(errors)) {
-      const fieldName = fieldNames[field] || field
-      messages.forEach(msg => {
-        errorMessages.push(`${fieldName}${msg}`)
-      })
+      // base キーの場合はフィールド名なしでメッセージのみ表示
+      if (field === 'base') {
+        messages.forEach(msg => {
+          errorMessages.push(msg)
+        })
+      } else {
+        const fieldName = fieldNames[field] || field
+        messages.forEach(msg => {
+          errorMessages.push(`${fieldName}${msg}`)
+        })
+      }
     }
 
     return errorMessages.join('\n')
