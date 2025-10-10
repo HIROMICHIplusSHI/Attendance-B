@@ -78,7 +78,7 @@ module AttendanceManagement
   def check_access_permission
     return if admin_or_correct_user(@user)
 
-    flash[:danger] = AppConstants::FlashMessages::ACCESS_DENIED
+    flash[:danger] = ::AppConstants::FlashMessages::ACCESS_DENIED
     redirect_to root_path
   end
 

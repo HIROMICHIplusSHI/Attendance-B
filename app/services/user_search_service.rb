@@ -9,7 +9,7 @@ class UserSearchService
   def initialize(params = {})
     @search_query = params[:search]
     @page = params[:page]
-    @per_page = params[:per] || AppConstants::Pagination::DEFAULT_PER_PAGE
+    @per_page = params[:per] || ::AppConstants::Pagination::DEFAULT_PER_PAGE
   end
 
   # ユーザー検索を実行

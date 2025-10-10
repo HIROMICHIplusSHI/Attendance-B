@@ -109,7 +109,7 @@ class AttendancesController < ApplicationController
   def logged_in_user
     return if logged_in?
 
-    flash[:danger] = AppConstants::FlashMessages::LOGIN_REQUIRED
+    flash[:danger] = ::AppConstants::FlashMessages::LOGIN_REQUIRED
     redirect_to login_path
   end
 end

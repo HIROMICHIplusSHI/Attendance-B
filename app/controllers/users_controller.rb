@@ -44,7 +44,7 @@ class UsersController < ApplicationController
     # 既存のアクセス制御
     return if admin_or_correct_user
 
-    flash[:danger] = AppConstants::FlashMessages::ACCESS_DENIED
+    flash[:danger] = ::AppConstants::FlashMessages::ACCESS_DENIED
     redirect_to(root_path) and return
   end
 
@@ -81,7 +81,7 @@ class UsersController < ApplicationController
 
   def export_csv
     unless current_user?(@user) || current_user.admin?
-      flash[:danger] = AppConstants::FlashMessages::ACCESS_DENIED
+      flash[:danger] = ::AppConstants::FlashMessages::ACCESS_DENIED
       redirect_to root_url and return
     end
 
@@ -164,7 +164,7 @@ class UsersController < ApplicationController
     @user = User.find(params[:id])
     return if current_user?(@user)
 
-    flash[:danger] = AppConstants::FlashMessages::ACCESS_DENIED
+    flash[:danger] = ::AppConstants::FlashMessages::ACCESS_DENIED
     redirect_to(root_path)
   end
 

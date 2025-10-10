@@ -85,7 +85,7 @@ class AttendanceChangeApprovalsController < ApplicationController
   end
 
   def handle_bulk_update_success
-    flash[:success] = AppConstants::FlashMessages::APPROVAL_COMPLETED
+    flash[:success] = ::AppConstants::FlashMessages::APPROVAL_COMPLETED
     redirect_to user_path(current_user)
   end
 
