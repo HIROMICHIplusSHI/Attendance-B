@@ -2,6 +2,7 @@ require 'csv'
 
 class UsersController < ApplicationController
   include CsvImportable
+  include JsonResponder
 
   before_action :logged_in_user,
                 only: %i[index show edit update destroy edit_basic_info update_basic_info edit_admin update_admin
@@ -14,12 +15,7 @@ class UsersController < ApplicationController
   before_action :set_one_month, only: %i[show export_csv attendance_log]
 
   def index
-    @users = User.all
-
-    # 検索機能
-    @users = @users.where("name LIKE ?", "%#{params[:search]}%") if params[:search].present?
-
-    @users = @users.page(params[:page]).per(20).order(:name)
+    @users = UserSearchService.new(params).call
   end
 
   def new
@@ -48,7 +44,7 @@ class UsersController < ApplicationController
     # 既存のアクセス制御
     return if admin_or_correct_user
 
-    flash[:danger] = "アクセス権限がありません。"
+    flash[:danger] = ::AppConstants::FlashMessages::ACCESS_DENIED
     redirect_to(root_path) and return
   end
 
@@ -85,7 +81,7 @@ class UsersController < ApplicationController
 
   def export_csv
     unless current_user?(@user) || current_user.admin?
-      flash[:danger] = "アクセス権限がありません。"
+      flash[:danger] = ::AppConstants::FlashMessages::ACCESS_DENIED
       redirect_to root_url and return
     end
 
@@ -168,16 +164,14 @@ class UsersController < ApplicationController
     @user = User.find(params[:id])
     return if current_user?(@user)
 
-    flash[:danger] = "アクセス権限がありません。"
+    flash[:danger] = ::AppConstants::FlashMessages::ACCESS_DENIED
     redirect_to(root_path)
   end
 
   def handle_basic_info_update_success
-    flash[:success] = '基本情報を更新しました。'
-    respond_to do |format|
-      format.html { redirect_to @user }
-      format.json { render json: { status: 'success', message: flash[:success], redirect_url: user_path(@user) } }
-    end
+    respond_with_json(true,
+                      success_message: '基本情報を更新しました。',
+                      redirect_url: user_path(@user))
   end
 
   def handle_basic_info_update_failure
@@ -185,18 +179,18 @@ class UsersController < ApplicationController
                            { target_user: { id: @user.id, name: @user.name },
                              errors: @user.errors.to_hash })
 
-    respond_to do |format|
-      format.html { render 'edit_basic_info', layout: request.xhr? ? false : 'application' }
-      format.json { render_error_json(@user.errors) }
-    end
+    respond_with_json(false,
+                      success_message: nil,
+                      redirect_url: nil,
+                      errors: @user.errors,
+                      html_view: 'edit_basic_info',
+                      layout: request.xhr? ? false : 'application')
   end
 
   def handle_admin_update_success
-    flash[:success] = "#{@user.name} の情報を更新しました。"
-    respond_to do |format|
-      format.html { redirect_to users_path }
-      format.json { render json: { status: 'success', message: flash[:success], redirect_url: users_path } }
-    end
+    respond_with_json(true,
+                      success_message: "#{@user.name} の情報を更新しました。",
+                      redirect_url: users_path)
   end
 
   def handle_admin_update_failure
@@ -204,9 +198,11 @@ class UsersController < ApplicationController
                            { target_user: { id: @user.id, name: @user.name },
                              errors: @user.errors.to_hash })
 
-    respond_to do |format|
-      format.html { render 'edit_admin', layout: request.xhr? ? false : 'application' }
-      format.json { render_error_json(@user.errors) }
-    end
+    respond_with_json(false,
+                      success_message: nil,
+                      redirect_url: nil,
+                      errors: @user.errors,
+                      html_view: 'edit_admin',
+                      layout: request.xhr? ? false : 'application')
   end
 end

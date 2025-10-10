@@ -14,7 +14,7 @@ class ApplicationController < ActionController::Base
     return if logged_in?
 
     store_location
-    flash[:danger] = "ログインしてください。"
+    flash[:danger] = ::AppConstants::FlashMessages::LOGIN_REQUIRED
     redirect_to login_path
   end
 
@@ -22,7 +22,7 @@ class ApplicationController < ActionController::Base
   def admin_user
     return if current_user&.admin?
 
-    flash[:danger] = "管理者権限が必要です。"
+    flash[:danger] = ::AppConstants::FlashMessages::ADMIN_REQUIRED
     redirect_to(root_path)
   end
 
@@ -31,7 +31,7 @@ class ApplicationController < ActionController::Base
     @user = User.find(params[:id])
     return if current_user?(@user)
 
-    flash[:danger] = "アクセス権限がありません。"
+    flash[:danger] = ::AppConstants::FlashMessages::ACCESS_DENIED
     redirect_to(root_path)
   end
 

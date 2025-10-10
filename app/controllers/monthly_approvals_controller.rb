@@ -131,7 +131,7 @@ class MonthlyApprovalsController < ApplicationController
   end
 
   def handle_bulk_update_success
-    flash[:success] = '承認処理が完了しました'
+    flash[:success] = ::AppConstants::FlashMessages::APPROVAL_COMPLETED
     redirect_to user_path(current_user)
   end
 
