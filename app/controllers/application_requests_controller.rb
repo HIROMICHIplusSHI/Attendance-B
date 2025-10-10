@@ -59,6 +59,10 @@ class ApplicationRequestsController < ApplicationController
   end
 
   def render_with_errors
+    log_error_with_context('申請フォーム入力エラー',
+                           { attendance: { id: @attendance.id, worked_on: @attendance.worked_on },
+                             errors: @errors })
+
     flash.now[:danger] = @errors.join("<br>").html_safe
     respond_to do |format|
       format.html { render :new, status: :unprocessable_entity, layout: request.xhr? ? false : 'application' }

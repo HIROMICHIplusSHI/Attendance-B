@@ -109,4 +109,42 @@ class ApplicationController < ActionController::Base
       { base: [errors.to_s] }
     end
   end
+
+  # エラー発生時に詳細情報をログに記録
+  # @param message [String] エラーメッセージ
+  # @param context [Hash] コンテキスト情報
+  def log_error_with_context(message, context = {})
+    log_data = {
+      message:,
+      timestamp: Time.current.iso8601,
+      user: current_user_info,
+      request: request_info
+    }.merge(context)
+
+    Rails.logger.error("[ERROR] #{message}")
+    Rails.logger.error("  詳細: #{log_data.to_json}")
+  end
+
+  # 現在のユーザー情報を取得
+  def current_user_info
+    return { id: nil, name: 'ゲスト', role: 'guest' } unless current_user
+
+    {
+      id: current_user.id,
+      name: current_user.name,
+      email: current_user.email,
+      role: current_user.role
+    }
+  end
+
+  # リクエスト情報を取得
+  def request_info
+    {
+      method: request.method,
+      path: request.path,
+      params: request.params.except('controller', 'action', 'password', 'password_confirmation').to_json,
+      ip: request.remote_ip,
+      user_agent: request.user_agent
+    }
+  end
 end

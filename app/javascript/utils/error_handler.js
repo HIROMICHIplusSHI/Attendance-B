@@ -12,6 +12,8 @@ export class ErrorHandler {
    * @returns {string} ユーザーに表示するエラーメッセージ
    */
   static handleFetchError(error, context = '処理') {
+    // 重要なエラーはサーバーにレポート
+    this.reportErrorToServer(error, context)
     let userMessage = `${context}に失敗しました。`
     let logMessage = error
 
@@ -113,5 +115,38 @@ export class ErrorHandler {
     }
 
     return errorMessages.join('\n')
+  }
+
+  /**
+   * エラーをサーバーにレポート
+   * @param {Error|Response} error - エラーオブジェクト
+   * @param {string} context - エラーコンテキスト
+   */
+  static reportErrorToServer(error, context) {
+    // ネットワークエラーとタイムアウトのみレポート（サーバーエラーは既にログに記録済み）
+    const shouldReport = (error instanceof TypeError && error.message.includes('Failed to fetch')) ||
+                        (error.name === 'AbortError')
+
+    if (!shouldReport) return
+
+    const errorData = {
+      message: error.message || 'Unknown error',
+      error_type: error.name || 'Error',
+      context: context,
+      url: window.location.href,
+      user_agent: navigator.userAgent
+    }
+
+    // エラーレポートを非同期で送信（失敗しても無視）
+    fetch('/error_reports', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify(errorData)
+    }).catch(() => {
+      // レポート送信失敗時は何もしない（無限ループ防止）
+    })
   }
 }
