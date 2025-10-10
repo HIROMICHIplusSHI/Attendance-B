@@ -4,6 +4,8 @@
  * JavaScriptでのエラー処理を統一し、ユーザーフレンドリーなメッセージを提供します
  */
 
+import { TIMEOUT } from '../config/constants'
+
 export class ErrorHandler {
   /**
    * Fetch APIのエラーを処理
@@ -74,7 +76,7 @@ export class ErrorHandler {
    * @param {number} timeout - タイムアウト時間（ミリ秒、デフォルト30秒）
    * @returns {Promise<Response>} レスポンス
    */
-  static async fetchWithTimeout(url, options = {}, timeout = 30000) {
+  static async fetchWithTimeout(url, options = {}, timeout = TIMEOUT.FETCH_TIMEOUT) {
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), timeout)
 
