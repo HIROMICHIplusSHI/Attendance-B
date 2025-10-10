@@ -82,4 +82,69 @@ class ApplicationController < ActionController::Base
     @worked_sum = @attendances.where.not(started_at: nil).count
     @total_working_times = 0.0
   end
+
+  # 共通エラーレスポンス（JSON）
+  # @param errors [Array, Hash, ActiveModel::Errors] エラー情報
+  # @param status [Symbol] HTTPステータスコード
+  def render_error_json(errors, status: :unprocessable_entity)
+    formatted_errors = format_errors_for_json(errors)
+    render json: { status: 'error', errors: formatted_errors }, status:
+  end
+
+  # エラー情報を統一形式に整形
+  # @return [Hash] { field_name: ['message1', 'message2'], base: ['general error'] }
+  def format_errors_for_json(errors)
+    case errors
+    when Array
+      # 文字列配列の場合は base キーに格納
+      { base: errors }
+    when ActiveModel::Errors
+      # ActiveModel::Errors の場合は Hash に変換
+      errors.to_hash
+    when Hash
+      # 既にHash形式の場合はそのまま
+      errors
+    else
+      # その他の場合は base に文字列として格納
+      { base: [errors.to_s] }
+    end
+  end
+
+  # エラー発生時に詳細情報をログに記録
+  # @param message [String] エラーメッセージ
+  # @param context [Hash] コンテキスト情報
+  def log_error_with_context(message, context = {})
+    log_data = {
+      message:,
+      timestamp: Time.current.iso8601,
+      user: current_user_info,
+      request: request_info
+    }.merge(context)
+
+    Rails.logger.error("[ERROR] #{message}")
+    Rails.logger.error("  詳細: #{log_data.to_json}")
+  end
+
+  # 現在のユーザー情報を取得
+  def current_user_info
+    return { id: nil, name: 'ゲスト', role: 'guest' } unless current_user
+
+    {
+      id: current_user.id,
+      name: current_user.name,
+      email: current_user.email,
+      role: current_user.role
+    }
+  end
+
+  # リクエスト情報を取得
+  def request_info
+    {
+      method: request.method,
+      path: request.path,
+      params: request.params.except('controller', 'action', 'password', 'password_confirmation').to_json,
+      ip: request.remote_ip,
+      user_agent: request.user_agent
+    }
+  end
 end

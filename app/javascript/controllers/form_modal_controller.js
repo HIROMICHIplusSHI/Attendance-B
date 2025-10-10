@@ -1,4 +1,5 @@
 import { Controller } from "@hotwired/stimulus"
+import { ErrorHandler } from "../utils/error_handler"
 
 // 単一フォーム用モーダルコントローラー（申請・編集・作成用）
 // 対象: application_requests, offices, users/edit_basic_info など
@@ -15,7 +16,7 @@ export default class extends Controller {
     const url = event.currentTarget.href
 
     try {
-      const response = await fetch(url, {
+      const response = await ErrorHandler.fetchWithTimeout(url, {
         headers: {
           'Accept': 'text/html',
           'X-Requested-With': 'XMLHttpRequest',
@@ -24,7 +25,9 @@ export default class extends Controller {
       })
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
+        const errorMessage = ErrorHandler.handleFetchError(response, 'モーダルの読み込み')
+        ErrorHandler.showUserMessage(errorMessage)
+        return
       }
 
       const html = await response.text()
@@ -37,8 +40,8 @@ export default class extends Controller {
       // 閉じるボタンの処理
       this.setupCloseButton()
     } catch (error) {
-      console.error('Error loading modal:', error)
-      alert('モーダルの読み込みに失敗しました')
+      const errorMessage = ErrorHandler.handleFetchError(error, 'モーダルの読み込み')
+      ErrorHandler.showUserMessage(errorMessage)
     }
   }
 
@@ -72,7 +75,7 @@ export default class extends Controller {
     const formData = new FormData(form)
 
     try {
-      const response = await fetch(form.action, {
+      const response = await ErrorHandler.fetchWithTimeout(form.action, {
         method: form.method.toUpperCase(),
         body: formData,
         headers: {
@@ -92,8 +95,8 @@ export default class extends Controller {
         this.handleError(html)
       }
     } catch (error) {
-      console.error('Form submission error:', error)
-      alert('送信に失敗しました')
+      const errorMessage = ErrorHandler.handleFetchError(error, 'フォームの送信')
+      ErrorHandler.showUserMessage(errorMessage)
     }
   }
 

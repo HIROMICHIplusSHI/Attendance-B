@@ -77,16 +77,9 @@ class UsersController < ApplicationController
 
   def update_basic_info
     if @user.update(basic_info_params)
-      flash[:success] = '基本情報を更新しました。'
-      respond_to do |format|
-        format.html { redirect_to @user }
-        format.json { render json: { status: 'success', message: flash[:success], redirect_url: user_path(@user) } }
-      end
+      handle_basic_info_update_success
     else
-      respond_to do |format|
-        format.html { render 'edit_basic_info', layout: request.xhr? ? false : 'application' }
-        format.json { render json: { status: 'error', errors: @user.errors } }
-      end
+      handle_basic_info_update_failure
     end
   end
 
@@ -179,6 +172,25 @@ class UsersController < ApplicationController
     redirect_to(root_path)
   end
 
+  def handle_basic_info_update_success
+    flash[:success] = '基本情報を更新しました。'
+    respond_to do |format|
+      format.html { redirect_to @user }
+      format.json { render json: { status: 'success', message: flash[:success], redirect_url: user_path(@user) } }
+    end
+  end
+
+  def handle_basic_info_update_failure
+    log_error_with_context('基本情報更新失敗',
+                           { target_user: { id: @user.id, name: @user.name },
+                             errors: @user.errors.to_hash })
+
+    respond_to do |format|
+      format.html { render 'edit_basic_info', layout: request.xhr? ? false : 'application' }
+      format.json { render_error_json(@user.errors) }
+    end
+  end
+
   def handle_admin_update_success
     flash[:success] = "#{@user.name} の情報を更新しました。"
     respond_to do |format|
@@ -188,9 +200,13 @@ class UsersController < ApplicationController
   end
 
   def handle_admin_update_failure
+    log_error_with_context('ユーザー情報更新失敗',
+                           { target_user: { id: @user.id, name: @user.name },
+                             errors: @user.errors.to_hash })
+
     respond_to do |format|
       format.html { render 'edit_admin', layout: request.xhr? ? false : 'application' }
-      format.json { render json: { status: 'error', errors: @user.errors } }
+      format.json { render_error_json(@user.errors) }
     end
   end
 end

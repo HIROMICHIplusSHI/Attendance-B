@@ -1,4 +1,5 @@
 import { Controller } from "@hotwired/stimulus"
+import { ErrorHandler } from "../utils/error_handler"
 
 // Connects to data-controller="accordion"
 export default class extends Controller {
@@ -29,7 +30,7 @@ export default class extends Controller {
 
     // If opening, load content via Ajax
     try {
-      const response = await fetch(this.urlValue, {
+      const response = await ErrorHandler.fetchWithTimeout(this.urlValue, {
         headers: {
           "X-Requested-With": "XMLHttpRequest",
           "Accept": "text/html"
@@ -48,10 +49,12 @@ export default class extends Controller {
         // Attach submit handler to form
         this.attachSubmitHandler()
       } else {
-        console.error("Failed to load edit form:", response.statusText)
+        const errorMessage = ErrorHandler.handleFetchError(response, '編集フォームの読み込み')
+        ErrorHandler.showUserMessage(errorMessage)
       }
     } catch (error) {
-      console.error("Error loading edit form:", error)
+      const errorMessage = ErrorHandler.handleFetchError(error, '編集フォームの読み込み')
+      ErrorHandler.showUserMessage(errorMessage)
     }
   }
 
@@ -72,7 +75,7 @@ export default class extends Controller {
         const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content')
 
         try {
-          const response = await fetch(form.action, {
+          const response = await ErrorHandler.fetchWithTimeout(form.action, {
             method: form.method,
             body: formData,
             headers: {
@@ -88,7 +91,6 @@ export default class extends Controller {
             window.location.href = data.redirect_url
           } else {
             // Error: show errors
-            const errorMessages = []
             const fieldNames = {
               'name': '名前',
               'email': 'メールアドレス',
@@ -103,18 +105,12 @@ export default class extends Controller {
               'scheduled_end_time': '指定勤務終了時間'
             }
 
-            for (const [field, messages] of Object.entries(data.errors)) {
-              const fieldName = fieldNames[field] || field
-              messages.forEach(msg => {
-                errorMessages.push(`${fieldName}${msg}`)
-              })
-            }
-
-            alert('入力エラー:\n\n' + errorMessages.join('\n'))
+            const errorMessage = ErrorHandler.formatValidationErrors(data.errors, fieldNames)
+            alert('入力エラー:\n\n' + errorMessage)
           }
         } catch (error) {
-          console.error('Form submission error:', error)
-          alert('エラーが発生しました。')
+          const errorMessage = ErrorHandler.handleFetchError(error, 'フォームの送信')
+          ErrorHandler.showUserMessage(errorMessage)
         }
       })
     }
