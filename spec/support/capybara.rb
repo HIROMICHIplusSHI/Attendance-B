@@ -6,8 +6,11 @@ require 'selenium-webdriver'
 # Puma server設定（Rack 3対応）- リモートChrome用
 Capybara.register_server :puma do |app, port, host|
   require 'rack/handler/puma'
-  Rack::Handler::Puma.run(app, Host: host, Port: port, Threads: '0:4', workers: 0, daemon: false)
+  Rack::Handler::Puma.run(app, Host: '0.0.0.0', Port: port, Threads: '0:4', workers: 0, daemon: false)
 end
+Capybara.server = :puma
+Capybara.server_host = '0.0.0.0'
+Capybara.app_host = "http://#{ENV.fetch('HOSTNAME', `hostname`.strip)}"
 
 # Docker環境用のリモートChromeドライバの設定
 Capybara.register_driver :remote_chrome do |app|
