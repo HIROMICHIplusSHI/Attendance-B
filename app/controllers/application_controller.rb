@@ -56,7 +56,8 @@ class ApplicationController < ActionController::Base
   def set_one_month
     set_month_range
     set_attendances
-    ensure_attendance_records_exist
+    # ロックタイムアウト回避のため、レコード自動作成をコメントアウト
+    # ensure_attendance_records_exist
     calculate_work_statistics
   end
 
@@ -73,8 +74,17 @@ class ApplicationController < ActionController::Base
     one_month = [*@first_day..@last_day]
     return if one_month.count == @attendances.count
 
-    missing_days = one_month - @attendances.pluck(:worked_on)
-    missing_days.each { |day| @user.attendances.create!(worked_on: day) }
+    existing_dates = @attendances.pluck(:worked_on)
+    missing_days = one_month - existing_dates
+    return if missing_days.empty?
+
+    # レコードを1件ずつ作成（find_or_create_byで重複を回避）
+    missing_days.each do |day|
+      @user.attendances.find_or_create_by(worked_on: day)
+    rescue ActiveRecord::RecordNotUnique
+      # 並行リクエストで既に作成された場合はスキップ
+      next
+    end
     set_attendances
   end
 
