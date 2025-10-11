@@ -99,7 +99,7 @@ all_users.each do |user|
     pattern = rand(10)
 
     case pattern
-    when 0..8  # 通常勤務（90%）
+    when 0..8 # 通常勤務（90%）
       user.attendances.create!(
         worked_on: date,
         started_at: Time.zone.parse("#{date} 09:00"),
