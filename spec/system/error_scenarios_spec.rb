@@ -37,7 +37,7 @@ RSpec.describe 'エラーシナリオ', type: :system, js: true do
   describe 'サーバーエラー（500）' do
     it 'サーバーエラー時にエラーメッセージが表示される' do
       # サーバーエラーをシミュレート（存在しないユーザーID）
-      visit user_path(999999)
+      visit user_path(999_999)
 
       # エラーページまたはエラーメッセージが表示される
       expect(page).to have_content('見つかりませんでした')
@@ -97,7 +97,7 @@ RSpec.describe 'エラーシナリオ', type: :system, js: true do
 
       # エラーメッセージが表示される（モーダル内）
       within('.modal-dialog') do
-        expect(page).to have_css('.alert-danger') || expect(page).to have_content('エラー')
+        expect(page.has_css?('.alert-danger') || page.has_content?('エラー')).to be true
       end
     end
   end

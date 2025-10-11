@@ -21,9 +21,7 @@ class MonthlyAttendanceService
     attendances = fetch_monthly_attendances
 
     # 不足レコードがあれば非同期で作成
-    if attendances.count < (@last_day - @first_day + 1).to_i
-      create_missing_attendance_records_optimized(attendances)
-    end
+    create_missing_attendance_records_optimized(attendances) if attendances.count < (@last_day - @first_day + 1).to_i
 
     fetch_monthly_attendances
   end

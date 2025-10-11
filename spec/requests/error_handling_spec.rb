@@ -170,9 +170,9 @@ RSpec.describe 'エラーハンドリング', type: :request do
     end
 
     it '日付が期待されるパラメータに不正な文字列を渡すとエラー', skip: '日付パラメータのハンドリング実装依存' do
-      expect {
+      expect do
         get user_path(general_user, month: 'not-a-date')
-      }.to raise_error(ArgumentError)
+      end.to raise_error(ArgumentError)
     end
   end
 
@@ -180,7 +180,7 @@ RSpec.describe 'エラーハンドリング', type: :request do
     before { sign_in admin_user }
 
     it 'ユニーク制約違反のエラーが適切に処理される' do
-      existing_user = create(:user, email: 'duplicate@example.com')
+      create(:user, email: 'duplicate@example.com')
 
       post users_path, params: {
         user: {

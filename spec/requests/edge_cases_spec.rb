@@ -37,9 +37,9 @@ RSpec.describe 'エッジケース', type: :request do
       end
 
       it '不正な日付形式でアクセスするとエラー', skip: '日付パラメータのハンドリング実装依存' do
-        expect {
+        expect do
           get user_path(general_user, month: 'invalid_date')
-        }.to raise_error(ArgumentError)
+        end.to raise_error(ArgumentError)
       end
 
       it '未来の日付でアクセスできる' do
