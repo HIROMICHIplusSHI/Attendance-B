@@ -99,19 +99,12 @@ all_users.each do |user|
     pattern = rand(10)
 
     case pattern
-    when 0..6  # 通常勤務（70%）
+    when 0..8  # 通常勤務（90%）
       user.attendances.create!(
         worked_on: date,
         started_at: Time.zone.parse("#{date} 09:00"),
         finished_at: Time.zone.parse("#{date} 18:00"),
         note: nil
-      )
-    when 7..8  # 残業あり（20%）
-      user.attendances.create!(
-        worked_on: date,
-        started_at: Time.zone.parse("#{date} 09:00"),
-        finished_at: Time.zone.parse("#{date} #{rand(19..21)}:00"),
-        note: "残業"
       )
     when 9 # 早退（10%）
       user.attendances.create!(
@@ -129,6 +122,87 @@ puts "\n✅ 10月分の勤怠データ作成完了"
 
 # 承認申請のサンプルデータ作成
 puts "\n📝 承認申請データを作成中..."
+
+# 提出用アカウントの承認申請データ（必須）
+puts "📌 提出用アカウントの申請データを作成中..."
+
+# テストユーザー（一般社員）の申請
+test_approver = managers[0] # manager1を承認者に
+worked_days = (october_start..october_end).to_a.reject { |d| d.saturday? || d.sunday? }
+
+# 月次承認申請（保留中）
+MonthlyApproval.create!(
+  user: test_user,
+  approver: test_approver,
+  target_month: october_start,
+  status: :pending
+)
+
+# 残業申請（承認済み1件、保留中1件）
+OvertimeRequest.create!(
+  user: test_user,
+  approver: test_approver,
+  worked_on: worked_days[10], # 10月中旬
+  estimated_end_time: Time.zone.parse("#{worked_days[10]} 21:00"),
+  business_content: "システム開発のため",
+  next_day_flag: false,
+  status: :approved
+)
+
+OvertimeRequest.create!(
+  user: test_user,
+  approver: test_approver,
+  worked_on: worked_days[15],
+  estimated_end_time: Time.zone.parse("#{worked_days[15]} 20:00"),
+  business_content: "プレゼン資料作成のため",
+  next_day_flag: false,
+  status: :pending
+)
+
+# 上長1（manager1）の申請
+manager1_approver = managers[1] # manager2を承認者に
+
+MonthlyApproval.create!(
+  user: managers[0],
+  approver: manager1_approver,
+  target_month: october_start,
+  status: :pending
+)
+
+OvertimeRequest.create!(
+  user: managers[0],
+  approver: manager1_approver,
+  worked_on: worked_days[12],
+  estimated_end_time: Time.zone.parse("#{worked_days[12]} 22:00"),
+  business_content: "月末処理のため",
+  next_day_flag: false,
+  status: :approved
+)
+
+# 上長2（manager2）の申請
+manager2_approver = managers[2] # manager3を承認者に
+
+MonthlyApproval.create!(
+  user: managers[1],
+  approver: manager2_approver,
+  target_month: october_start,
+  status: :approved
+)
+
+OvertimeRequest.create!(
+  user: managers[1],
+  approver: manager2_approver,
+  worked_on: worked_days[8],
+  estimated_end_time: Time.zone.parse("#{worked_days[8]} 21:30"),
+  business_content: "顧客対応のため",
+  next_day_flag: false,
+  status: :pending
+)
+
+puts "✅ 提出用アカウント申請データ作成完了"
+puts "  ├─ test@example.com: 月次申請1件、残業申請2件"
+puts "  ├─ manager1@example.com: 月次申請1件、残業申請1件"
+puts "  └─ manager2@example.com: 月次申請1件、残業申請1件"
 
 # 月次承認申請（一部承認済み、一部保留中）
 sample_employees = employees.sample(10)
