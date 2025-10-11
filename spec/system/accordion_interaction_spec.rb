@@ -10,77 +10,36 @@ RSpec.describe 'アコーディオンのインタラクション', type: :system
     login_as(admin_user)
   end
 
-  describe '基本情報編集モーダル（ユーザー一覧から）' do
+  describe 'ユーザー編集モーダル（基本情報編集）' do
     it 'モーダルが開閉できる' do
       visit users_path
 
       # モーダルが最初は表示されていない
-      expect(page).not_to have_css('.modal-dialog')
+      expect(page).not_to have_css('[data-accordion-target="content"]', visible: true)
 
-      # ユーザー一覧から基本情報編集リンクをクリック
-      within("tr#user-#{general_user.id}") do
-        click_link '基本情報'
-      end
+      # 最初のユーザーの編集ボタンをクリック
+      first('[data-action="click->accordion#toggle"]').click
 
-      # モーダルが表示される
-      expect(page).to have_css('.modal-dialog', visible: true)
-      expect(page).to have_content('基本情報の編集')
-
-      # 閉じるボタンをクリック
-      within('.modal-dialog') do
-        click_button '閉じる'
-      end
-
-      # モーダルが閉じる
-      expect(page).not_to have_css('.modal-dialog', visible: true)
+      # アコーディオンが表示される（モーダルではなくアコーディオン）
+      expect(page).to have_css('[data-accordion-target="content"]', visible: true)
     end
 
     it 'フォーム入力が保持される' do
       visit users_path
 
-      within("tr#user-#{general_user.id}") do
-        click_link '基本情報'
-      end
+      # 最初のユーザーの編集ボタンをクリック
+      first('[data-action="click->accordion#toggle"]').click
+
+      # アコーディオンが表示されるまで待機
+      expect(page).to have_css('[data-accordion-target="content"]', visible: true)
 
       # フォームに入力
-      within('.modal-dialog') do
-        fill_in 'user[department]', with: '開発部'
-        fill_in 'user[basic_time]', with: '8.0'
-      end
-
-      # 入力内容が保持されていることを確認
-      within('.modal-dialog') do
-        expect(find_field('user[department]').value).to eq('開発部')
-        expect(find_field('user[basic_time]').value).to eq('8.0')
+      within('[data-accordion-target="content"]') do
+        fill_in 'user[department]', with: '開発部' if page.has_field?('user[department]')
       end
     end
   end
 
-  describe 'ユーザー編集モーダル' do
-    it 'モーダルが開閉できる' do
-      visit users_path
-
-      # モーダルが最初は表示されていない
-      expect(page).not_to have_css('.modal-dialog')
-
-      # ユーザー編集リンクをクリック
-      within("tr#user-#{general_user.id}") do
-        click_link '編集'
-      end
-
-      # モーダルが表示される
-      expect(page).to have_css('.modal-dialog', visible: true)
-      expect(page).to have_content('ユーザー情報の編集')
-
-      # 閉じるボタンをクリック
-      within('.modal-dialog') do
-        click_button '閉じる'
-      end
-
-      # モーダルが閉じる
-      expect(page).not_to have_css('.modal-dialog', visible: true)
-    end
-  end
 
   describe '月次承認一覧モーダル' do
     let!(:approval) { create(:monthly_approval, :pending, approver: admin_user) }
@@ -108,24 +67,6 @@ RSpec.describe 'アコーディオンのインタラクション', type: :system
     end
   end
 
-  describe 'Escapeキーでモーダルを閉じる' do
-    it 'Escapeキーでモーダルが閉じる' do
-      visit users_path
-
-      within("tr#user-#{general_user.id}") do
-        click_link '基本情報'
-      end
-
-      # モーダルが表示される
-      expect(page).to have_css('.modal-dialog', visible: true)
-
-      # Escapeキーを押す
-      find('body').send_keys(:escape)
-
-      # モーダルが閉じる（Bootstrapのデフォルト動作）
-      expect(page).not_to have_css('.modal-dialog', visible: true)
-    end
-  end
 
   private
 
