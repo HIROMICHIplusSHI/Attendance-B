@@ -1,5 +1,5 @@
 import { Controller } from "@hotwired/stimulus"
-import { ErrorHandler } from "../utils/error_handler"
+import { ErrorHandler } from "utils/error_handler"
 
 // 単一フォーム用モーダルコントローラー（申請・編集・作成用）
 // 対象: application_requests, offices, users/edit_basic_info など

@@ -4,7 +4,7 @@
  * JavaScriptでのエラー処理を統一し、ユーザーフレンドリーなメッセージを提供します
  */
 
-import { TIMEOUT } from '../config/constants'
+import { TIMEOUT } from 'config/constants'
 
 export class ErrorHandler {
   /**

@@ -1,5 +1,5 @@
 import { Controller } from "@hotwired/stimulus"
-import { ErrorHandler } from "../utils/error_handler"
+import { ErrorHandler } from "utils/error_handler"
 
 // 一括更新用モーダルコントローラー（承認用）
 // 対象: overtime_approvals, monthly_approvals, attendance_change_approvals など
