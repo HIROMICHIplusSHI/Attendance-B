@@ -182,31 +182,35 @@ RSpec.describe 'エラーハンドリング', type: :request do
     it 'ユニーク制約違反のエラーが適切に処理される' do
       create(:user, email: 'duplicate@example.com')
 
-      post users_path, params: {
-        user: {
-          name: 'テスト',
-          email: 'duplicate@example.com', # 既存のメールアドレス
-          password: 'password123',
-          password_confirmation: 'password123'
+      expect do
+        post users_path, params: {
+          user: {
+            name: 'テスト',
+            email: 'duplicate@example.com', # 既存のメールアドレス
+            password: 'password123',
+            password_confirmation: 'password123'
+          }
         }
-      }
+      end.not_to change(User, :count)
 
       expect(response).to have_http_status(:success) # フォームを再表示
-      expect(response.body.include?('Email') || response.body.include?('すでに存在')).to be true
+      expect(response.body).to include('エラーが発生しました')
     end
 
     it 'NOT NULL制約違反のエラーが適切に処理される' do
-      post users_path, params: {
-        user: {
-          name: '', # 空文字列でバリデーションエラー
-          email: 'test@example.com',
-          password: 'password123',
-          password_confirmation: 'password123'
+      expect do
+        post users_path, params: {
+          user: {
+            name: '', # 空文字列でバリデーションエラー
+            email: 'test@example.com',
+            password: 'password123',
+            password_confirmation: 'password123'
+          }
         }
-      }
+      end.not_to change(User, :count)
 
       expect(response).to have_http_status(:success) # フォームを再表示
-      expect(response.body.include?('Name') || response.body.include?('入力')).to be true
+      expect(response.body).to include('エラーが発生しました')
     end
   end
 
