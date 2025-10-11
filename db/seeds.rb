@@ -25,7 +25,7 @@ puts "✅ 管理者ユーザー作成: #{admin_user.name} (#{admin_user.email}) 
 
 # 上長ユーザー（5名）
 managers = []
-manager_departments = ["開発部", "営業部", "総務部", "人事部", "マーケティング部"]
+manager_departments = %w[開発部 営業部 総務部 人事部 マーケティング部]
 
 5.times do |i|
   manager = User.find_or_create_by!(email: "manager#{i + 1}@example.com") do |user|
@@ -62,7 +62,7 @@ puts "✅ テストユーザー作成: #{test_user.name} (#{test_user.email}) [#
 
 # 一般ユーザー（40人） - 各上長に8人ずつ配置
 employees = []
-departments = ["開発部", "営業部", "総務部", "人事部", "経理部", "マーケティング部"]
+departments = %w[開発部 営業部 総務部 人事部 経理部 マーケティング部]
 
 40.times do |n|
   employee = User.find_or_create_by!(email: "employee#{n + 1}@example.com") do |u|
@@ -70,7 +70,7 @@ departments = ["開発部", "営業部", "総務部", "人事部", "経理部", 
     u.password = "password"
     u.password_confirmation = "password"
     u.role = :employee
-    u.employee_number = format("E%05d", n + 2)  # E00002から開始
+    u.employee_number = format("E%05d", n + 2) # E00002から開始
     u.department = departments[n % departments.length]
     u.basic_time = Time.zone.parse("08:00:00")
     u.work_time = Time.zone.parse("07:30:00")
@@ -98,29 +98,29 @@ all_users.each do |user|
     # ランダムで出勤パターンを作成
     pattern = rand(10)
 
-    attendance = case pattern
-                 when 0..6  # 通常勤務（70%）
-                   user.attendances.create!(
-                     worked_on: date,
-                     started_at: Time.zone.parse("#{date} 09:00"),
-                     finished_at: Time.zone.parse("#{date} 18:00"),
-                     note: nil
-                   )
-                 when 7..8  # 残業あり（20%）
-                   user.attendances.create!(
-                     worked_on: date,
-                     started_at: Time.zone.parse("#{date} 09:00"),
-                     finished_at: Time.zone.parse("#{date} #{19 + rand(3)}:00"),
-                     note: "残業"
-                   )
-                 when 9  # 早退（10%）
-                   user.attendances.create!(
-                     worked_on: date,
-                     started_at: Time.zone.parse("#{date} 09:00"),
-                     finished_at: Time.zone.parse("#{date} 15:00"),
-                     note: "早退"
-                   )
-                 end
+    case pattern
+    when 0..6  # 通常勤務（70%）
+      user.attendances.create!(
+        worked_on: date,
+        started_at: Time.zone.parse("#{date} 09:00"),
+        finished_at: Time.zone.parse("#{date} 18:00"),
+        note: nil
+      )
+    when 7..8  # 残業あり（20%）
+      user.attendances.create!(
+        worked_on: date,
+        started_at: Time.zone.parse("#{date} 09:00"),
+        finished_at: Time.zone.parse("#{date} #{rand(19..21)}:00"),
+        note: "残業"
+      )
+    when 9 # 早退（10%）
+      user.attendances.create!(
+        worked_on: date,
+        started_at: Time.zone.parse("#{date} 09:00"),
+        finished_at: Time.zone.parse("#{date} 15:00"),
+        note: "早退"
+      )
+    end
   end
   print "."
 end
@@ -138,9 +138,9 @@ sample_employees.each_with_index do |employee, idx|
 
   MonthlyApproval.create!(
     user: employee,
-    approver: approver,
+    approver:,
     target_month: october_start,
-    status: status
+    status:
   )
 end
 
@@ -153,15 +153,15 @@ sample_attendances.each_with_index do |attendance, idx|
   status = idx < 3 ? :approved : :pending
 
   AttendanceChangeRequest.create!(
-    attendance: attendance,
+    attendance:,
     requester: attendance.user,
-    approver: approver,
+    approver:,
     original_started_at: attendance.started_at,
     original_finished_at: attendance.finished_at,
     requested_started_at: attendance.started_at + 1.hour,
     requested_finished_at: attendance.finished_at + 1.hour,
     change_reason: "打刻修正依頼",
-    status: status
+    status:
   )
 end
 
@@ -175,19 +175,19 @@ sample_employees.sample(8).each_with_index do |employee, idx|
 
   OvertimeRequest.create!(
     user: employee,
-    approver: approver,
-    worked_on: worked_on,
+    approver:,
+    worked_on:,
     estimated_end_time: Time.zone.parse("#{worked_on} 21:00"),
-    business_content: "#{['システム開発', 'プレゼン資料作成', '月末処理', '顧客対応'].sample}のため",
+    business_content: "#{%w[システム開発 プレゼン資料作成 月末処理 顧客対応].sample}のため",
     next_day_flag: false,
-    status: status
+    status:
   )
 end
 
 puts "✅ 残業申請 8件作成（承認済み: 4件、保留中: 4件）"
 
 # 統計情報表示
-puts "\n" + "=" * 60
+puts "\n#{'=' * 60}"
 puts "🎯 ログイン情報:"
 puts "=" * 60
 puts "管理者   : admin@example.com / password"
