@@ -4,7 +4,7 @@ require 'capybara/rspec'
 require 'selenium-webdriver'
 
 # Puma server設定（Rack 3対応）- リモートChrome用
-Capybara.register_server :puma do |app, port, host|
+Capybara.register_server :puma do |app, port, _host|
   require 'rack/handler/puma'
   Rack::Handler::Puma.run(app, Host: '0.0.0.0', Port: port, Threads: '0:4', workers: 0, daemon: false)
 end
