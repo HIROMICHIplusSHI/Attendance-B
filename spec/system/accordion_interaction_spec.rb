@@ -3,8 +3,8 @@
 require 'rails_helper'
 
 RSpec.describe 'アコーディオンのインタラクション', type: :system, js: true do
-  let(:admin_user) { create(:user, :admin, password: 'password123') }
-  let(:general_user) { create(:user, password: 'password123') }
+  let!(:admin_user) { create(:user, :admin, password: 'password123') }
+  let!(:general_user) { create(:user, password: 'password123') }
 
   before do
     login_as(admin_user)
