@@ -30,6 +30,13 @@ jobs:
         ports:
           - 3306:3306
 
+      chrome:
+        image: selenium/standalone-chrome:latest
+        ports:
+          - 4444:4444
+        options: >-
+          --shm-size=2g
+
     steps:
     - name: 📥 リポジトリチェックアウト
       uses: actions/checkout@v4
