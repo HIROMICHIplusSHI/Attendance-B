@@ -15,19 +15,70 @@
       </div>
       <%= f.submit "検索", class: "btn btn-primary btn-sm" %>
       <% if params[:search].present? %>
-        <%= link_to "リセット", users_path, class: "btn btn-default btn-sm" %>
+        <%= link_to "リセット", users_path, class: "btn btn-primary btn-sm" %>
       <% end %>
     <% end %>
   </div>
 </div>
+
+<!-- CSVインポートセクション（管理者のみ表示） -->
+<% if current_user.admin? %>
+  <div class="row" style="margin-top: 20px;">
+    <div class="col-md-10 col-md-offset-1">
+      <div class="panel panel-default">
+        <div class="panel-heading">
+          <h4 class="panel-title">CSVインポート</h4>
+        </div>
+        <div class="panel-body" data-controller="collapse">
+          <%= form_with url: import_csv_users_path, method: :post, local: true, multipart: true do |f| %>
+            <div class="form-group">
+              <%= f.file_field :file, accept: 'text/csv', class: "form-control", style: "height: auto; padding: 6px 12px;" %>
+            </div>
+            <div class="form-group" style="margin-top: 15px;">
+              <%= f.submit "CSVをインポート", class: "btn btn-primary" %>
+              <button type="button" class="btn btn-primary" data-action="click->collapse#toggle">
+                <span class="glyphicon glyphicon-question-sign"></span> CSVフォーマットを確認する
+              </button>
+            </div>
+          <% end %>
+
+          <hr>
+
+          <div style="display: none;" data-collapse-target="content">
+            <h5>CSVフォーマット</h5>
+            <p class="text-muted">以下の形式でCSVファイルを作成してください。ヘッダー行は必須です。</p>
+            <pre><code>社員番号,氏名,メールアドレス,パスワード,役割,上長社員番号
+E100,伊藤太郎,ito@example.com,password123,employee,
+M100,木村花子,kimura@example.com,password123,manager,
+E101,小林一郎,kobayashi@example.com,password123,employee,M100</code></pre>
+
+            <h5>項目説明</h5>
+            <ul class="text-muted">
+              <li><strong>社員番号</strong>: 必須。一意の識別番号</li>
+              <li><strong>氏名</strong>: 必須。50文字以内</li>
+              <li><strong>メールアドレス</strong>: 必須。重複不可</li>
+              <li><strong>パスワード</strong>: 必須。6文字以上</li>
+              <li><strong>役割</strong>: 必須。employee（一般社員）/ manager（上長）/ admin（管理者）のいずれか</li>
+              <li><strong>上長社員番号</strong>: 任意。存在する社員番号を指定</li>
+            </ul>
+
+            <p class="text-info">
+              <strong>注意:</strong> 基本時間（08:00）と指定勤務時間（07:30）はデフォルト値が自動設定されます。個別調整は基本情報編集から行ってください。
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+<% end %>
 
 <div class="col-md-10 col-md-offset-1">
   <!-- ページネーション（上部左・ボタン化） -->
   <div class="pagination-wrapper" style="margin-bottom: 20px;">
     <div class="btn-group" role="group" aria-label="ページナビゲーション">
       <% if @users.current_page > 1 %>
-        <%= link_to "最初", users_path(search: params[:search]), class: "btn btn-default btn-sm" %>
-        <%= link_to "前", users_path(page: @users.prev_page, search: params[:search]), class: "btn btn-default btn-sm" %>
+        <%= link_to "最初", users_path(search: params[:search]), class: "btn btn-primary btn-sm" %>
+        <%= link_to "前", users_path(page: @users.prev_page, search: params[:search]), class: "btn btn-primary btn-sm" %>
       <% end %>
 
       <% (@users.current_page - 2..@users.current_page + 2).each do |page| %>
@@ -35,14 +86,14 @@
           <% if page == @users.current_page %>
             <span class="btn btn-primary btn-sm active"><%= page %></span>
           <% else %>
-            <%= link_to page, users_path(page: page, search: params[:search]), class: "btn btn-default btn-sm" %>
+            <%= link_to page, users_path(page: page, search: params[:search]), class: "btn btn-primary btn-sm" %>
           <% end %>
         <% end %>
       <% end %>
 
       <% if @users.current_page < @users.total_pages %>
-        <%= link_to "次", users_path(page: @users.next_page, search: params[:search]), class: "btn btn-default btn-sm" %>
-        <%= link_to "最後", users_path(page: @users.total_pages, search: params[:search]), class: "btn btn-default btn-sm" %>
+        <%= link_to "次", users_path(page: @users.next_page, search: params[:search]), class: "btn btn-primary btn-sm" %>
+        <%= link_to "最後", users_path(page: @users.total_pages, search: params[:search]), class: "btn btn-primary btn-sm" %>
       <% end %>
     </div>
   </div>
@@ -56,15 +107,19 @@
         <th></th>
       </tr>
     </thead>
-    <tbody>
-      <% @users.each do |user| %>
+    <% @users.each do |user| %>
+      <tbody data-controller="accordion" data-accordion-url-value="<%= edit_admin_user_path(user) %>">
         <tr>
           <td><%= link_to user.name, user_path(user) %></td>
           <td><%= user.email %></td>
           <td><%= user.department %></td>
           <td>
             <% if current_user.admin? && !current_user?(user) %>
-              <%= link_to "編集", edit_user_path(user), class: "btn btn-primary btn-sm" %>
+              <button type="button"
+                      class="btn btn-primary btn-sm"
+                      data-action="click->accordion#toggle">
+                編集
+              </button>
               <%= link_to "削除", user,
                   data: {
                     turbo_method: :delete,
@@ -74,8 +129,15 @@
             <% end %>
           </td>
         </tr>
-      <% end %>
-    </tbody>
+        <% if current_user.admin? && !current_user?(user) %>
+          <tr>
+            <td colspan="4" style="padding: 0; border-top: none;">
+              <div data-accordion-target="content" style="display: none;"></div>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    <% end %>
   </table>
 </div>
 

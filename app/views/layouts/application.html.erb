@@ -18,5 +18,16 @@
       </div>
       <%= yield %>
     </div>
+
+    <!-- グローバルモーダルコンテナ（承認モーダル用） -->
+    <div data-controller="modal">
+      <div data-modal-target="container" class="modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1050; background-color: rgba(0,0,0,0.3);" data-action="click->modal#backgroundClick">
+        <div class="modal-dialog" style="position: relative; width: auto; margin: 10px auto; max-width: 800px; top: 50%; transform: translateY(-50%);">
+          <div data-modal-target="content" class="modal-content">
+            <!-- モーダルコンテンツはJavaScriptで挿入 -->
+          </div>
+        </div>
+      </div>
+    </div>
   </body>
 </html>

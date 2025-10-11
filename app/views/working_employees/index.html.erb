@@ -1,0 +1,39 @@
+<% provide(:title, "出勤社員一覧") %>
+
+<div class="row">
+  <div class="col-md-12 text-center">
+    <h1>出勤社員一覧</h1>
+    <p class="text-muted">本日の出勤中社員: <strong><%= @working_employees.count %>名</strong></p>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-md-10 col-md-offset-1">
+    <table class="table table-striped table-bordered">
+      <thead>
+        <tr class="active">
+          <th class="text-center">社員番号</th>
+          <th>氏名</th>
+          <th>所属</th>
+          <th class="text-center">出勤時間</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @working_employees.each do |attendance| %>
+          <tr>
+            <td class="text-center"><%= attendance.user.employee_number %></td>
+            <td><%= attendance.user.name %></td>
+            <td><%= attendance.user.department %></td>
+            <td class="text-center"><%= attendance.started_at.strftime('%H:%M') %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+
+    <% if @working_employees.empty? %>
+      <div class="alert alert-info text-center">
+        <p>現在出勤中の社員はいません。</p>
+      </div>
+    <% end %>
+  </div>
+</div>

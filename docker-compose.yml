@@ -9,8 +9,10 @@ services:
       - .:/rails
     depends_on:
       - db
+      - chrome
     environment:
       - DATABASE_URL=mysql2://root:password@db:3306/attendance_app_development
+      - SELENIUM_REMOTE_URL=http://chrome:4444/wd/hub
     command: ["sh", "-c", "rm -f tmp/pids/server.pid && RAILS_ENV=development ./bin/rails server -b 0.0.0.0"]
     stdin_open: true
     tty: true
@@ -25,6 +27,16 @@ services:
     volumes:
       - mysql_data:/var/lib/mysql
     command: --default-authentication-plugin=mysql_native_password
+
+  chrome:
+    image: seleniarm/standalone-chromium:latest
+    ports:
+      - "4444:4444"
+      - "7900:7900"
+    shm_size: 2gb
+    environment:
+      - SE_NODE_MAX_SESSIONS=5
+      - SE_NODE_OVERRIDE_MAX_SESSIONS=true
 
 volumes:
   mysql_data:

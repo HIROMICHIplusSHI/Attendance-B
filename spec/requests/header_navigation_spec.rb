@@ -84,29 +84,59 @@ RSpec.describe "HeaderNavigation", type: :request do
   end
 
   describe "管理者ログイン時のヘッダー" do
-    let(:admin_user) { User.create!(name: "管理者", email: "admin@example.com", password: "password123", admin: true) }
+    let(:admin_user) do
+      User.create!(name: "管理者", email: "admin@example.com", password: "password123",
+                   role: :admin, basic_time: Time.zone.parse("2025-01-01 08:00"),
+                   work_time: Time.zone.parse("2025-01-01 08:00"))
+    end
 
     before do
       post login_path, params: { session: { email: admin_user.email, password: "password123" } }
       follow_redirect! if response.redirect?
     end
 
-    it "管理者メニューが表示される" do
+    it "管理者メニューがドロップダウンではなく直接配置で表示される" do
       get root_path
-      expect(response.body).to include('管理者メニュー')
-      expect(response.body).to include('dropdown-header')
+      # ドロップダウンヘッダーではなく、ナビゲーションバーに直接表示
+      nav_section = response.body.match(%r{<nav>.*?</nav>}m)&.to_s || ""
+      expect(nav_section).to include('ユーザー一覧')
+      expect(nav_section).to include('出勤社員一覧')
+      expect(nav_section).to include('拠点情報修正')
+      expect(nav_section).to include('基本情報の修正')
     end
 
-    it "ユーザー一覧リンクが表示される" do
+    it "ユーザー一覧リンクがヘッダーに直接表示される" do
       get root_path
-      expect(response.body).to include('ユーザー一覧')
-      expect(response.body).to include('href="/users"')
+      nav_section = response.body.match(%r{<nav>.*?</nav>}m)&.to_s || ""
+      expect(nav_section).to include('ユーザー一覧')
+      expect(nav_section).to include('href="/users"')
     end
 
-    it "基本設定の修正リンクが表示される" do
+    it "出勤社員一覧リンクがヘッダーに直接表示される" do
       get root_path
-      expect(response.body).to include('基本設定の修正')
-      expect(response.body).to include("href=\"/users/#{admin_user.id}/edit_basic_info\"")
+      nav_section = response.body.match(%r{<nav>.*?</nav>}m)&.to_s || ""
+      expect(nav_section).to include('出勤社員一覧')
+      expect(nav_section).to include('href="/working_employees"')
+    end
+
+    it "拠点情報修正リンクがヘッダーに直接表示される" do
+      get root_path
+      nav_section = response.body.match(%r{<nav>.*?</nav>}m)&.to_s || ""
+      expect(nav_section).to include('拠点情報修正')
+      expect(nav_section).to include('href="/offices"')
+    end
+
+    it "基本情報の修正リンクがヘッダーに直接表示される" do
+      get root_path
+      nav_section = response.body.match(%r{<nav>.*?</nav>}m)&.to_s || ""
+      expect(nav_section).to include('基本情報の修正')
+      expect(nav_section).to include('href="/basic_info"')
+    end
+
+    it "管理者メニューのドロップダウンヘッダーが表示されない" do
+      get root_path
+      expect(response.body).not_to include('dropdown-header')
+      expect(response.body).not_to include('管理者メニュー')
     end
   end
 
@@ -116,11 +146,13 @@ RSpec.describe "HeaderNavigation", type: :request do
       follow_redirect! if response.redirect?
     end
 
-    it "管理者メニューが表示されない" do
+    it "管理者専用リンクが表示されない" do
       get root_path
-      expect(response.body).not_to include('管理者メニュー')
-      expect(response.body).not_to include('ユーザー一覧')
-      expect(response.body).not_to include('基本設定の修正')
+      nav_section = response.body.match(%r{<nav>.*?</nav>}m)&.to_s || ""
+      expect(nav_section).not_to include('ユーザー一覧')
+      expect(nav_section).not_to include('出勤社員一覧')
+      expect(nav_section).not_to include('拠点情報修正')
+      expect(nav_section).not_to include('基本情報の修正')
     end
   end
 

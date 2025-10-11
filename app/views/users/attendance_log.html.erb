@@ -1,0 +1,49 @@
+<div class="modal-header">
+  <button type="button" class="close" data-dismiss="modal">
+    <span aria-hidden="true">&times;</span>
+  </button>
+  <h4 class="modal-title">勤怠修正ログ（承認済み）</h4>
+</div>
+
+<div class="modal-body">
+  <% if @attendance_logs.present? %>
+    <table class="table table-bordered table-striped">
+      <thead>
+        <tr>
+          <th style="width: 80px;">日付</th>
+          <th style="width: 60px;">回数</th>
+          <th>変更前出勤</th>
+          <th>変更前退勤</th>
+          <th style="width: 30px;"></th>
+          <th>変更後出勤</th>
+          <th>変更後退勤</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @attendance_logs.each do |log| %>
+          <% log[:changes].each_with_index do |change, index| %>
+            <tr>
+              <% if index == 0 %>
+                <td rowspan="<%= log[:changes].size %>" class="text-center" style="vertical-align: middle;">
+                  <%= log[:worked_on].strftime('%m/%d') %>
+                </td>
+              <% end %>
+              <td class="text-center"><%= index + 1 %>回目</td>
+              <td class="text-center"><%= change[:before_started_at]&.strftime('%H:%M') || '-' %></td>
+              <td class="text-center"><%= change[:before_finished_at]&.strftime('%H:%M') || '-' %></td>
+              <td class="text-center">→</td>
+              <td class="text-center"><%= change[:after_started_at]&.strftime('%H:%M') || '-' %></td>
+              <td class="text-center"><%= change[:after_finished_at]&.strftime('%H:%M') || '-' %></td>
+            </tr>
+          <% end %>
+        <% end %>
+      </tbody>
+    </table>
+  <% else %>
+    <p class="text-muted">承認済みの変更履歴はありません。</p>
+  <% end %>
+</div>
+
+<div class="modal-footer">
+  <button type="button" class="btn btn-primary" data-dismiss="modal">閉じる</button>
+</div>

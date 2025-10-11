@@ -1,17 +1,21 @@
+require 'csv'
+
 class UsersController < ApplicationController
-  before_action :logged_in_user, only: %i[index show edit update destroy edit_basic_info update_basic_info]
-  before_action :admin_user, only: %i[index destroy edit_basic_info update_basic_info]
+  include CsvImportable
+  include JsonResponder
+
+  before_action :logged_in_user,
+                only: %i[index show edit update destroy edit_basic_info update_basic_info edit_admin update_admin
+                         import_csv export_csv attendance_log]
+  before_action :admin_user, only: %i[index destroy edit_basic_info update_basic_info edit_admin update_admin
+                                      import_csv]
   before_action :admin_or_correct_user_check, only: %i[edit update]
-  before_action :set_user, only: %i[show edit update destroy edit_basic_info update_basic_info]
-  before_action :set_one_month, only: [:show]
+  before_action :set_user, only: %i[show edit update destroy edit_basic_info update_basic_info edit_admin
+                                    update_admin export_csv attendance_log]
+  before_action :set_one_month, only: %i[show export_csv attendance_log]
 
   def index
-    @users = User.all
-
-    # 検索機能
-    @users = @users.where("name LIKE ?", "%#{params[:search]}%") if params[:search].present?
-
-    @users = @users.page(params[:page]).per(20).order(:name)
+    @users = UserSearchService.new(params).call
   end
 
   def new
@@ -31,8 +35,17 @@ class UsersController < ApplicationController
   end
 
   def show
-    redirect_to(root_path) unless admin_or_correct_user
-    flash[:danger] = "アクセス権限がありません。" unless admin_or_correct_user
+    # 管理者は自分の勤怠ページにアクセス不可
+    if current_user.admin? && current_user?(@user)
+      flash[:danger] = "管理者は勤怠機能を利用できません。"
+      redirect_to users_path and return
+    end
+
+    # 既存のアクセス制御
+    return if admin_or_correct_user
+
+    flash[:danger] = ::AppConstants::FlashMessages::ACCESS_DENIED
+    redirect_to(root_path) and return
   end
 
   def edit; end
@@ -59,12 +72,45 @@ class UsersController < ApplicationController
   end
 
   def update_basic_info
+    if @user.update(basic_info_params)
+      handle_basic_info_update_success
+    else
+      handle_basic_info_update_failure
+    end
+  end
+
+  def export_csv
+    unless current_user?(@user) || current_user.admin?
+      flash[:danger] = ::AppConstants::FlashMessages::ACCESS_DENIED
+      redirect_to root_url and return
+    end
+
+    exporter = AttendanceCsvExporter.new(@user, @first_day, @last_day)
+    send_data exporter.export, filename: exporter.filename, type: 'text/csv; charset=utf-8'
+  end
+
+  def attendance_log
+    head :forbidden and return unless current_user?(@user) || current_user.admin?
+
+    service = AttendanceLogService.new(@user, @first_day, @last_day)
+    @attendance_logs = service.fetch_logs
+
     respond_to do |format|
-      if @user.update(basic_info_params)
-        handle_successful_update(format)
-      else
-        handle_failed_update(format)
-      end
+      format.html { render layout: false }
+    end
+  end
+
+  def edit_admin
+    respond_to do |format|
+      format.html { render layout: false if request.xhr? }
+    end
+  end
+
+  def update_admin
+    if @user.update(admin_edit_params)
+      handle_admin_update_success
+    else
+      handle_admin_update_failure
     end
   end
 
@@ -75,12 +121,17 @@ class UsersController < ApplicationController
   end
 
   def set_one_month
-    result = MonthlyAttendanceService.new(@user, params[:date]).call
+    date_param = params[:month] || params[:date]
+    result = MonthlyAttendanceService.new(@user, date_param).call
     @first_day = result[:first_day]
     @last_day = result[:last_day]
     @attendances = result[:attendances]
     @worked_sum = result[:worked_sum]
     @total_working_times = result[:total_working_times]
+    @overtime_requests = @user.overtime_requests
+                              .includes(:approver)
+                              .where(worked_on: @first_day..@last_day)
+                              .index_by(&:worked_on)
   end
 
   def user_params
@@ -88,7 +139,23 @@ class UsersController < ApplicationController
   end
 
   def basic_info_params
-    params.require(:user).permit(:department, :basic_time, :work_time)
+    params.require(:user).permit(:department, :basic_time, :work_time, :role, :employee_number)
+  end
+
+  def admin_edit_params
+    permitted = params.require(:user).permit(
+      :name, :email, :department, :employee_number,
+      :password, :password_confirmation,
+      :basic_time, :work_time,
+      :scheduled_start_time, :scheduled_end_time,
+      :role
+      # card_id は意図的に除外（未実装）
+    )
+
+    # 管理者への変更を防ぐ
+    permitted[:role] = @user.role if permitted[:role] == 'admin'
+
+    permitted
   end
 
   def admin_or_correct_user_check
@@ -97,26 +164,45 @@ class UsersController < ApplicationController
     @user = User.find(params[:id])
     return if current_user?(@user)
 
-    flash[:danger] = "アクセス権限がありません。"
+    flash[:danger] = ::AppConstants::FlashMessages::ACCESS_DENIED
     redirect_to(root_path)
   end
 
-  def handle_successful_update(format)
-    flash[:success] = '基本情報を更新しました。'
-    format.html { redirect_to @user }
-    format.json { render json: successful_update_json }
+  def handle_basic_info_update_success
+    respond_with_json(true,
+                      success_message: '基本情報を更新しました。',
+                      redirect_url: user_path(@user))
   end
 
-  def handle_failed_update(format)
-    format.html { render 'edit_basic_info', layout: request.xhr? ? false : 'application' }
-    format.json { render json: { status: 'error', errors: @user.errors } }
+  def handle_basic_info_update_failure
+    log_error_with_context('基本情報更新失敗',
+                           { target_user: { id: @user.id, name: @user.name },
+                             errors: @user.errors.to_hash })
+
+    respond_with_json(false,
+                      success_message: nil,
+                      redirect_url: nil,
+                      errors: @user.errors,
+                      html_view: 'edit_basic_info',
+                      layout: request.xhr? ? false : 'application')
   end
 
-  def successful_update_json
-    {
-      status: 'success',
-      message: '基本情報を更新しました。',
-      redirect_url: user_path(@user)
-    }
+  def handle_admin_update_success
+    respond_with_json(true,
+                      success_message: "#{@user.name} の情報を更新しました。",
+                      redirect_url: users_path)
+  end
+
+  def handle_admin_update_failure
+    log_error_with_context('ユーザー情報更新失敗',
+                           { target_user: { id: @user.id, name: @user.name },
+                             errors: @user.errors.to_hash })
+
+    respond_with_json(false,
+                      success_message: nil,
+                      redirect_url: nil,
+                      errors: @user.errors,
+                      html_view: 'edit_admin',
+                      layout: request.xhr? ? false : 'application')
   end
 end

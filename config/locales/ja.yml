@@ -1,8 +1,16 @@
 ja:
+  enums:
+    user:
+      role:
+        employee: 一般社員
+        manager: 上長
+        admin: 管理者
   activerecord:
     models:
       user: ユーザー
       attendance: 勤怠
+      office: 拠点
+      monthly_approval: 月次承認申請
     attributes:
       user:
         name: 名前
@@ -12,11 +20,21 @@ ja:
         work_time: 指定勤務時間
         password: パスワード
         password_confirmation: パスワード再入力
+        role: 役割
+        employee_number: 社員番号
       attendance:
         worked_on: 日付
         started_at: 出勤時間
         finished_at: 退勤時間
         note: 備考
+      office:
+        office_number: 拠点番号
+        name: 拠点名
+        attendance_type: 勤怠種類
+      monthly_approval:
+        approver: 承認者
+        target_month: 対象月
+        status: ステータス
   date:
     formats:
       default: "%Y/%m/%d"

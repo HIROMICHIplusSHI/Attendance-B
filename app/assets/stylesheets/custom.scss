@@ -199,3 +199,119 @@ p {
   background-color: rgba(0, 0, 0, 0.5);
   z-index: 1040;
 }
+
+/* お知らせセクション */
+.approval-notifications {
+  background-color: #f9f9f9;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.approval-notifications h4 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  color: #333;
+  border-bottom: 2px solid #5cb85c;
+  padding-bottom: 10px;
+}
+
+.notification-item {
+  padding: 10px 0;
+  border-bottom: 1px solid #eee;
+}
+
+.notification-item:last-child {
+  border-bottom: none;
+}
+
+.notification-link {
+  display: block;
+  color: #333;
+  text-decoration: none;
+  font-size: 14px;
+  transition: background-color 0.2s;
+  padding: 5px;
+  border-radius: 3px;
+}
+
+.notification-link:hover {
+  background-color: #e9ecef;
+  text-decoration: none;
+}
+
+.notification-badge {
+  color: #d9534f;
+  font-weight: bold;
+  margin-left: 10px;
+}
+
+/* 承認モーダル */
+.modal-content {
+  position: relative;
+  background-color: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  border-radius: 6px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+  background-clip: padding-box;
+  outline: 0;
+}
+
+.modal-header {
+  padding: 15px;
+  border-bottom: 1px solid #e5e5e5;
+  min-height: 16.43px;
+}
+
+.modal-header .modal-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 500;
+  line-height: 1.42857143;
+}
+
+.modal-header .close {
+  float: right;
+  font-size: 21px;
+  font-weight: bold;
+  line-height: 1;
+  color: #000;
+  opacity: 0.2;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  padding: 0;
+  margin-top: -2px;
+  -webkit-appearance: none;
+}
+
+.modal-header .close:hover,
+.modal-header .close:focus {
+  opacity: 0.5;
+  outline: 0;
+}
+
+.modal-body {
+  position: relative;
+  padding: 15px;
+}
+
+.modal-footer {
+  padding: 15px;
+  text-align: right;
+  border-top: 1px solid #e5e5e5;
+}
+
+.modal-footer .btn + .btn {
+  margin-left: 5px;
+  margin-bottom: 0;
+}
+
+.modal-footer .btn-group .btn + .btn {
+  margin-left: -1px;
+}
+
+.modal-footer .btn-block + .btn-block {
+  margin-left: 0;
+}

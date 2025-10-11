@@ -11,14 +11,21 @@ RSpec.describe "UserPageRedesign", type: :request do
     # ログイン処理
     post login_path, params: { session: { email: user.email, password: "password123" } }
 
-    # テスト用勤怠データ作成
+    # テスト用勤怠データ作成（過去3日分：出退勤済み）
     3.times do |i|
       user.attendances.create!(
-        worked_on: Date.current.beginning_of_month + i.days,
-        started_at: Time.current.change(hour: 9, min: 0) + i.days,
-        finished_at: Time.current.change(hour: 18, min: 0) + i.days
+        worked_on: Date.current - 3.days + i.days,
+        started_at: Time.current.change(hour: 9, min: 0) - 3.days + i.days,
+        finished_at: Time.current.change(hour: 18, min: 0) - 3.days + i.days
       )
     end
+
+    # 当日の勤怠データ作成（未出勤状態：登録ボタン表示のため）
+    user.attendances.create!(
+      worked_on: Date.current,
+      started_at: nil,
+      finished_at: nil
+    )
   end
 
   describe "ユーザー詳細ページのクローン元完全再現" do
@@ -51,44 +58,64 @@ RSpec.describe "UserPageRedesign", type: :request do
 
       it "前月へボタンが存在している" do
         expect(response.body).to include("⇦")
-        expect(response.body).to include('class="btn btn-info btn-sm"')
+        expect(response.body).to include('class="btn btn-primary btn-sm"')
       end
 
       it "1ヶ月の勤怠編集へボタンが存在している" do
         expect(response.body).to include("1ヶ月の勤怠編集へ")
-        expect(response.body).to include('class="btn btn-success"')
+        expect(response.body).to include('class="btn btn-primary"')
       end
 
       it "次月へボタンが存在している" do
         expect(response.body).to include("⇨")
-        expect(response.body).to include('class="btn btn-info btn-sm"')
+        expect(response.body).to include('class="btn btn-primary btn-sm"')
       end
     end
 
-    describe "7列シンプル勤怠テーブル" do
+    describe "3段ヘッダー勤怠テーブル（15列構成）" do
       it "table-attendancesのidが適用されている" do
         expect(response.body).to include('id="table-attendances"')
       end
 
-      it "正確な7列のヘッダーが表示されている" do
-        expect(response.body).to include('<th class="text-center">日付</th>')
-        expect(response.body).to include('<th class="text-center">曜日</th>')
-        expect(response.body).to include('<th class="text-center">勤怠登録</th>')
-        expect(response.body).to include('<th class="text-center">出勤時間</th>')
-        expect(response.body).to include('<th class="text-center">退勤時間</th>')
-        expect(response.body).to include('<th class="text-center">在社時間</th>')
-        expect(response.body).to include('<th class="text-center">備考</th>')
+      it "1段目：大グループヘッダーが表示されている" do
+        expect(response.body).to include('<th rowspan="3" class="text-center">残業申請</th>')
+        expect(response.body).to include('<th rowspan="3" class="text-center">日付</th>')
+        expect(response.body).to include('<th rowspan="3" class="text-center">曜日</th>')
+        expect(response.body).to include('<th colspan="7" class="text-center">【実績】</th>')
+        expect(response.body).to include('<th colspan="5" class="text-center">所定外勤務</th>')
       end
 
-      it "複雑な多重ヘッダー（rowspan、colspan）が使用されていない" do
-        expect(response.body).not_to include('rowspan="3"')
-        expect(response.body).not_to include('colspan="8"')
-        expect(response.body).not_to include("残業申請")
+      it "2段目：中グループヘッダーが表示されている" do
+        expect(response.body).to include('<th colspan="3" class="text-center">出社</th>')
+        expect(response.body).to include('<th colspan="2" class="text-center">退社</th>')
+        expect(response.body).to include('<th rowspan="2" class="text-center">在社時間</th>')
+        expect(response.body).to include('<th rowspan="2" class="text-center">備考</th>')
+        expect(response.body).to include('<th colspan="2" class="text-center">終了予定時間</th>')
+        expect(response.body).to include('<th rowspan="2" class="text-center">時間外時間</th>')
+        expect(response.body).to include('<th rowspan="2" class="text-center">業務処理内容</th>')
+        expect(response.body).to include('<th rowspan="2" class="text-center">指示者確認印</th>')
+      end
+
+      it "3段目：詳細カラムヘッダーが表示されている" do
+        expect(response.body).to include('<th class="text-center" style="width: 50px;">時</th>')
+        expect(response.body).to include('<th class="text-center" style="width: 50px;">分</th>')
+        expect(response.body).to include('<th class="text-center" style="width: 100px;">勤怠登録</th>')
+      end
+
+      it "3段ヘッダー構造（rowspan、colspan）が使用されている" do
+        expect(response.body).to include('rowspan="3"')
+        expect(response.body).to include('colspan="7"')
+        expect(response.body).to include('colspan="5"')
       end
 
       it "勤怠登録ボタンが適切に表示されている" do
         expect(response.body).to include("登録")
         expect(response.body).to include('class="btn btn-primary btn-attendance"')
+      end
+
+      it "残業申請ボタンが表示されている" do
+        expect(response.body).to include("残業申請")
+        expect(response.body).to include('class="btn btn-primary btn-sm application-request-btn"')
       end
     end
 
@@ -107,6 +134,14 @@ RSpec.describe "UserPageRedesign", type: :request do
 
       it "累計在社時間ヘッダーが表示されている" do
         expect(response.body).to include("累計在社時間")
+      end
+
+      it "累計残業時間ヘッダーが表示されている" do
+        expect(response.body).to include("累計残業時間")
+      end
+
+      it "所属長承認ヘッダーが表示されている" do
+        expect(response.body).to include("所属長承認")
       end
 
       it "統計値が計算されて表示されている" do
@@ -131,10 +166,11 @@ RSpec.describe "UserPageRedesign", type: :request do
   end
 
   describe "動的データ表示確認" do
-    it "実際の勤怠データが15分単位で表示されている" do
+    it "実際の勤怠データが時と分に分割されて表示されている" do
       get user_path(user)
-      expect(response.body).to include("09:00") # 出勤時間（15分単位に丸められて表示）
-      expect(response.body).to include("18:00") # 退勤時間（15分単位に丸められて表示）
+      expect(response.body).to include("09") # 出勤時間（時）
+      expect(response.body).to include("00") # 出勤時間（分）
+      expect(response.body).to include("18") # 退勤時間（時）
     end
 
     it "曜日が正しく表示されている" do

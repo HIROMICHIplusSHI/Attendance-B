@@ -1,8 +1,23 @@
 // Configure your import map in config/importmap.rb. Read more: https://github.com/rails/importmap-rails
 import { Turbo } from "@hotwired/turbo-rails"
+import { Application } from "@hotwired/stimulus"
+import ModalController from "controllers/modal_controller"
+import FormModalController from "controllers/form_modal_controller"
+import BulkModalController from "controllers/bulk_modal_controller"
+import CollapseController from "controllers/collapse_controller"
+import AccordionController from "controllers/accordion_controller"
 
 // Turboをグローバルに露出
 window.Turbo = Turbo;
+
+// Stimulusアプリケーションを初期化
+const application = Application.start()
+application.register("modal", ModalController)
+application.register("form-modal", FormModalController)
+application.register("bulk-modal", BulkModalController)
+application.register("collapse", CollapseController)
+application.register("accordion", AccordionController)
+window.Stimulus = application
 
 /**
  * バニラJavaScript ドロップダウンメニュー実装
@@ -12,28 +27,20 @@ window.Turbo = Turbo;
 
 // Turbo対応のドロップダウン初期化関数
 function initializeDropdowns() {
-  console.log('ドロップダウンJavaScript初期化開始');
-
   // ドロップダウントグル要素を取得
   const dropdownToggles = document.querySelectorAll('.dropdown-toggle');
-  console.log('見つかったドロップダウン数:', dropdownToggles.length);
 
   // 各ドロップダウントグルにイベントリスナーを設定
-  dropdownToggles.forEach(function(toggle, index) {
-    console.log('ドロップダウン', index + 1, 'に設定中');
-
+  dropdownToggles.forEach(function(toggle) {
     // 既存のリスナーを削除してから新しいリスナーを追加
     toggle.removeEventListener('click', handleDropdownClick);
     toggle.addEventListener('click', handleDropdownClick);
   });
-
-  console.log('ドロップダウンJavaScript初期化完了');
 }
 
 // ドロップダウンクリックハンドラー
 function handleDropdownClick(event) {
   event.preventDefault();
-  console.log('ドロップダウンがクリックされました');
 
   const dropdown = this.parentElement;
   const isCurrentlyOpen = dropdown.classList.contains('open');
@@ -44,9 +51,6 @@ function handleDropdownClick(event) {
   // 現在のドロップダウンが閉じていた場合は開く
   if (!isCurrentlyOpen) {
     dropdown.classList.add('open');
-    console.log('ドロップダウンを開きました');
-  } else {
-    console.log('ドロップダウンを閉じました');
   }
 }
 

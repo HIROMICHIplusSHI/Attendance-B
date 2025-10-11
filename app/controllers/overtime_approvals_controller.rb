@@ -1,0 +1,88 @@
+class OvertimeApprovalsController < ApplicationController
+  before_action :logged_in_user
+  before_action :require_manager, only: %i[index bulk_update]
+
+  def index
+    @requests = OvertimeRequest.pending.where(approver: current_user).includes(user: :attendances)
+
+    return unless request.xhr?
+
+    render layout: false
+  end
+
+  def bulk_update
+    selected_requests = extract_selected_requests
+
+    return render_no_selection_error if selected_requests.empty?
+    return render_pending_status_error if pending_status?(selected_requests)
+
+    request.xhr? ? handle_ajax_update : handle_normal_update(selected_requests)
+  rescue ActiveRecord::RecordInvalid => e
+    handle_bulk_update_error(e)
+  end
+
+  private
+
+  def require_manager
+    return if current_user.manager?
+
+    redirect_to root_path, alert: '管理者権限が必要です'
+  end
+
+  def extract_selected_requests
+    request_params = params[:requests] || {}
+    request_params.select { |_id, attrs| attrs[:selected] == '1' }
+  end
+
+  def render_no_selection_error
+    @requests = OvertimeRequest.pending.where(approver: current_user).includes(user: :attendances)
+    flash.now[:alert] = '承認する項目を選択してください'
+    render :index, layout: false, status: :unprocessable_entity
+  end
+
+  def pending_status?(selected_requests)
+    selected_requests.any? { |_id, attrs| attrs[:status] == 'pending' }
+  rescue NoMethodError
+    # ActionController::Parametersの場合
+    selected_requests.each.any? { |_id, attrs| attrs[:status] == 'pending' }
+  end
+
+  def render_pending_status_error
+    @requests = OvertimeRequest.pending.where(approver: current_user).includes(user: :attendances)
+    flash.now[:alert] = '承認または否認を選択してください'
+    render :index, layout: false, status: :unprocessable_entity
+  end
+
+  def process_bulk_update(selected_requests)
+    OvertimeRequest.transaction do
+      selected_requests.each do |id, attrs|
+        request_record = OvertimeRequest.find_by(id:, approver: current_user)
+        next unless request_record
+
+        request_record.update!(status: attrs[:status])
+      end
+    end
+  end
+
+  def handle_bulk_update_success
+    flash[:success] = ::AppConstants::FlashMessages::APPROVAL_COMPLETED
+    redirect_to user_path(current_user)
+  end
+
+  def handle_bulk_update_error(error)
+    @requests = OvertimeRequest.pending.where(approver: current_user).includes(user: :attendances)
+    flash.now[:alert] = "エラーが発生しました: #{error.message}"
+    render :index, layout: false, status: :unprocessable_entity
+  end
+
+  def handle_ajax_update
+    # Ajaxリクエスト時はバリデーションのみ（保存しない）
+    head :ok
+  end
+
+  def handle_normal_update(selected_requests)
+    # 通常リクエスト時に実際に保存
+    process_bulk_update(selected_requests)
+    handle_bulk_update_success
+  end
+end
