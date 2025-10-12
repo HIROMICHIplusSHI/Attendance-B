@@ -140,17 +140,23 @@ class UsersController < ApplicationController
     @attendances = result[:attendances]
     @worked_sum = result[:worked_sum]
     @total_working_times = result[:total_working_times]
-    @overtime_requests = @user.overtime_requests
-                              .includes(:approver)
-                              .where(worked_on: @first_day..@last_day)
-                              .index_by(&:worked_on)
+    @overtime_requests = load_overtime_requests
+    @attendance_change_requests = load_attendance_change_requests
+  end
 
-    # 勤怠変更申請データを読み込み
+  def load_overtime_requests
+    @user.overtime_requests
+         .includes(:approver)
+         .where(worked_on: @first_day..@last_day)
+         .index_by(&:worked_on)
+  end
+
+  def load_attendance_change_requests
     attendance_ids = @attendances.pluck(:id)
-    @attendance_change_requests = AttendanceChangeRequest
-                                  .includes(:approver)
-                                  .where(attendance_id: attendance_ids)
-                                  .index_by(&:attendance_id)
+    AttendanceChangeRequest
+      .includes(:approver)
+      .where(attendance_id: attendance_ids)
+      .index_by(&:attendance_id)
   end
 
   def user_params
