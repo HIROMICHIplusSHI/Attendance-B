@@ -94,7 +94,7 @@ module AttendanceManagement
         attendance = @user.attendances.find(id)
 
         # 変更があるかチェック
-        if has_attendance_changes?(attendance, attendance_params)
+        if attendance_changes?(attendance, attendance_params)
           create_attendance_change_request(attendance, attendance_params, approver_id)
           change_count += 1
         end
@@ -106,41 +106,29 @@ module AttendanceManagement
     change_count
   end
 
-  def has_attendance_changes?(attendance, attendance_params)
+  def attendance_changes?(attendance, attendance_params)
     return false if attendance_params[:started_at].blank? && attendance_params[:finished_at].blank?
 
-    # 現在の値と新しい値を比較
-    new_started = if attendance_params[:started_at].present?
-                    parse_time_for_date(attendance_params[:started_at],
-                                        attendance.worked_on)
-                  end
-    new_finished = if attendance_params[:finished_at].present?
-                     parse_time_for_date(attendance_params[:finished_at],
-                                         attendance.worked_on)
-                   end
+    started_changed?(attendance, attendance_params) || finished_changed?(attendance, attendance_params)
+  end
 
-    # 時刻が変更されている場合のみtrue
-    (new_started.present? && new_started != attendance.started_at) ||
-      (new_finished.present? && new_finished != attendance.finished_at)
+  def started_changed?(attendance, attendance_params)
+    return false unless attendance_params[:started_at].present?
+
+    new_started = parse_time_for_date(attendance_params[:started_at], attendance.worked_on)
+    new_started != attendance.started_at
+  end
+
+  def finished_changed?(attendance, attendance_params)
+    return false unless attendance_params[:finished_at].present?
+
+    new_finished = parse_time_for_date(attendance_params[:finished_at], attendance.worked_on)
+    new_finished != attendance.finished_at
   end
 
   def create_attendance_change_request(attendance, attendance_params, approver_id)
-    if attendance_params[:started_at].present?
-      requested_started = parse_time_for_date(attendance_params[:started_at],
-                                              attendance.worked_on)
-    end
-    if attendance_params[:finished_at].present?
-      requested_finished = parse_time_for_date(attendance_params[:finished_at],
-                                               attendance.worked_on)
-    end
-
-    # 備考（変更理由）のバリデーション
-    raise "#{attendance.worked_on.strftime('%m/%d')}の変更理由（備考）を入力してください" if attendance_params[:note].blank?
-
-    # 時刻のバリデーション
-    if requested_started.present? && requested_finished.present? && requested_started >= requested_finished
-      raise "#{attendance.worked_on.strftime('%m/%d')}の出勤時間が退勤時間より遅いか同じ時間です"
-    end
+    requested_times = parse_requested_times(attendance, attendance_params)
+    validate_change_request(attendance, attendance_params, requested_times)
 
     AttendanceChangeRequest.create!(
       attendance:,
@@ -148,11 +136,39 @@ module AttendanceManagement
       approver_id:,
       original_started_at: attendance.started_at,
       original_finished_at: attendance.finished_at,
-      requested_started_at: requested_started || attendance.started_at,
-      requested_finished_at: requested_finished || attendance.finished_at,
+      requested_started_at: requested_times[:started] || attendance.started_at,
+      requested_finished_at: requested_times[:finished] || attendance.finished_at,
       change_reason: attendance_params[:note],
       status: :pending
     )
+  end
+
+  def parse_requested_times(attendance, attendance_params)
+    {
+      started: if attendance_params[:started_at].present?
+                 parse_time_for_date(attendance_params[:started_at],
+                                     attendance.worked_on)
+               end,
+      finished: if attendance_params[:finished_at].present?
+                  parse_time_for_date(attendance_params[:finished_at],
+                                      attendance.worked_on)
+                end
+    }
+  end
+
+  def validate_change_request(attendance, attendance_params, requested_times)
+    # 備考（変更理由）のバリデーション
+    raise "#{attendance.worked_on.strftime('%m/%d')}の変更理由（備考）を入力してください" if attendance_params[:note].blank?
+
+    # 時刻のバリデーション
+    validate_requested_times(attendance, requested_times)
+  end
+
+  def validate_requested_times(attendance, requested_times)
+    return unless requested_times[:started].present? && requested_times[:finished].present?
+    return if requested_times[:started] < requested_times[:finished]
+
+    raise "#{attendance.worked_on.strftime('%m/%d')}の出勤時間が退勤時間より遅いか同じ時間です"
   end
 
   def handle_update_success
@@ -172,28 +188,29 @@ module AttendanceManagement
   def handle_update_error(error)
     Rails.logger.error "Attendance update error: #{error.message}"
 
-    # エラーメッセージをユーザーフレンドリーに
-    error_message = case error.message
-                    when /承認者を選択してください/
-                      "承認者を選択してください。"
-                    when /変更がありません/
-                      "変更がありません。勤怠時間を変更してから申請してください。"
-                    when /変更理由（備考）を入力してください/
-                      error.message
-                    when /出勤時間が退勤時間より/
-                      error.message
-                    else
-                      "勤怠変更申請の送信に失敗しました。#{error.message}"
-                    end
+    flash.now[:danger] = format_error_message(error)
+    prepare_error_view
 
-    flash.now[:danger] = error_message
+    render 'edit_one_month', status: :unprocessable_entity
+  end
 
-    # 入力内容を保持するためにフォーム用データを準備
+  def format_error_message(error)
+    case error.message
+    when /承認者を選択してください/
+      "承認者を選択してください。"
+    when /変更がありません/
+      "変更がありません。勤怠時間を変更してから申請してください。"
+    when /変更理由（備考）を入力してください/, /出勤時間が退勤時間より/
+      error.message
+    else
+      "勤怠変更申請の送信に失敗しました。#{error.message}"
+    end
+  end
+
+  def prepare_error_view
     @attendances = fetch_monthly_attendances
     @worked_sum = @attendances.where.not(started_at: nil, finished_at: nil).count
     @form_params = params[:attendances] || {}
     @approver_id = params[:approver_id]
-
-    render 'edit_one_month', status: :unprocessable_entity
   end
 end
