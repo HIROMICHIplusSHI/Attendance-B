@@ -81,7 +81,7 @@ RSpec.describe "UserPageRedesign", type: :request do
         expect(response.body).to include('<th rowspan="3" class="text-center">残業申請</th>')
         expect(response.body).to include('<th rowspan="3" class="text-center">日付</th>')
         expect(response.body).to include('<th rowspan="3" class="text-center">曜日</th>')
-        expect(response.body).to include('<th colspan="7" class="text-center">【実績】</th>')
+        expect(response.body).to include('<th colspan="8" class="text-center">【実績】</th>')
         expect(response.body).to include('<th colspan="5" class="text-center">所定外勤務</th>')
       end
 
@@ -90,6 +90,7 @@ RSpec.describe "UserPageRedesign", type: :request do
         expect(response.body).to include('<th colspan="2" class="text-center">退社</th>')
         expect(response.body).to include('<th rowspan="2" class="text-center">在社時間</th>')
         expect(response.body).to include('<th rowspan="2" class="text-center">備考</th>')
+        expect(response.body).to include('<th rowspan="2" class="text-center">勤怠確認者印</th>')
         expect(response.body).to include('<th colspan="2" class="text-center">終了予定時間</th>')
         expect(response.body).to include('<th rowspan="2" class="text-center">時間外時間</th>')
         expect(response.body).to include('<th rowspan="2" class="text-center">業務処理内容</th>')
@@ -104,7 +105,7 @@ RSpec.describe "UserPageRedesign", type: :request do
 
       it "3段ヘッダー構造（rowspan、colspan）が使用されている" do
         expect(response.body).to include('rowspan="3"')
-        expect(response.body).to include('colspan="7"')
+        expect(response.body).to include('colspan="8"')
         expect(response.body).to include('colspan="5"')
       end
 

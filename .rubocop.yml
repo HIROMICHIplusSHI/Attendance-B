@@ -1,3 +1,5 @@
+inherit_from: .rubocop_todo.yml
+
 # RuboCop設定ファイル
 # 学習目的で最小限の設定
 
