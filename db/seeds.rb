@@ -6,6 +6,8 @@ MonthlyApproval.destroy_all
 OvertimeRequest.destroy_all
 AttendanceChangeRequest.destroy_all
 Attendance.destroy_all
+# manager_idの外部キー参照をクリアしてからユーザー削除
+User.update_all(manager_id: nil)
 User.destroy_all
 puts "✅ データクリア完了"
 
