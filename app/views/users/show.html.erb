@@ -132,7 +132,7 @@
         <th rowspan="3" class="text-center">残業申請</th>
         <th rowspan="3" class="text-center">日付</th>
         <th rowspan="3" class="text-center">曜日</th>
-        <th colspan="7" class="text-center">【実績】</th>
+        <th colspan="8" class="text-center">【実績】</th>
         <th colspan="5" class="text-center">所定外勤務</th>
       </tr>
       <!-- 2段目：中グループ -->
@@ -141,6 +141,7 @@
         <th colspan="2" class="text-center">退社</th>
         <th rowspan="2" class="text-center">在社時間</th>
         <th rowspan="2" class="text-center">備考</th>
+        <th rowspan="2" class="text-center">勤怠確認者印</th>
         <th colspan="2" class="text-center">終了予定時間</th>
         <th rowspan="2" class="text-center">時間外時間</th>
         <th rowspan="2" class="text-center">業務処理内容</th>
@@ -223,6 +224,25 @@
         <!-- 【実績】備考 -->
         <td class="text-center"><%= day.note %></td>
 
+        <!-- 勤怠確認者印 -->
+        <td class="text-center">
+          <% attendance_change = @attendance_change_requests&.dig(day.id) %>
+          <% if attendance_change.present? %>
+            <div>
+              <%= attendance_change.approver.name %>
+              <br>
+              <% case attendance_change.status %>
+              <% when 'approved' %>
+                <span class="label label-default">承認</span>
+              <% when 'pending' %>
+                <span class="label label-default">申請中</span>
+              <% when 'rejected' %>
+                <span class="label label-default">否認</span>
+              <% end %>
+            </div>
+          <% end %>
+        </td>
+
         <!-- 所定外勤務：終了予定時間：時 -->
         <td class="text-center">
           <%= overtime&.estimated_end_time&.strftime("%H") %>
@@ -272,14 +292,14 @@
     <tfoot>
       <tr>
         <td colspan="3" class="text-center">累計日数</td>
-        <td colspan="4" class="text-center">総合勤務時間</td>
+        <td colspan="5" class="text-center">総合勤務時間</td>
         <td colspan="3" class="text-center">累計在社時間</td>
         <td colspan="3" class="text-center">累計残業時間</td>
         <td colspan="2" class="text-center">所属長承認</td>
       </tr>
       <tr>
         <td colspan="3" class="text-center"><%= @attendances.count { |day| day.started_at.present? } %></td>
-        <td colspan="4" class="text-center"><%= format_basic_info(@user.work_time).to_f * @worked_sum %></td>
+        <td colspan="5" class="text-center"><%= format_basic_info(@user.work_time).to_f * @worked_sum %></td>
         <td colspan="3" class="text-center">
           <% @total_working_times = @total_working_times.to_f %>
           <% @attendances.each do |day| %>

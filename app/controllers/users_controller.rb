@@ -48,9 +48,21 @@ class UsersController < ApplicationController
     redirect_to(root_path) and return
   end
 
-  def edit; end
+  def edit
+    # 管理者は自分自身を編集できない
+    return unless current_user.admin? && current_user?(@user)
+
+    flash[:danger] = "管理者は設定から自身の情報を編集できません。"
+    redirect_to root_path and return
+  end
 
   def update
+    # 管理者は自分自身を編集できない
+    if current_user.admin? && current_user?(@user)
+      flash[:danger] = "管理者は設定から自身の情報を編集できません。"
+      redirect_to root_path and return
+    end
+
     if @user.update(user_params)
       flash[:success] = 'ユーザー情報を更新しました。'
       redirect_to @user
@@ -132,6 +144,13 @@ class UsersController < ApplicationController
                               .includes(:approver)
                               .where(worked_on: @first_day..@last_day)
                               .index_by(&:worked_on)
+
+    # 勤怠変更申請データを読み込み
+    attendance_ids = @attendances.pluck(:id)
+    @attendance_change_requests = AttendanceChangeRequest
+                                  .includes(:approver)
+                                  .where(attendance_id: attendance_ids)
+                                  .index_by(&:attendance_id)
   end
 
   def user_params

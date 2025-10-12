@@ -63,14 +63,16 @@
               <%= ApplicationController::DAYS_OF_THE_WEEK[day.worked_on.wday] %>
             </td>
             <td class="text-center">
+              <% started_value = @form_params&.dig(day.id.to_s, 'started_at') || day.started_at&.strftime("%H:%M") %>
               <%= time_field_tag "attendances[#{day.id}][started_at]",
-                  day.started_at&.strftime("%H:%M"),
+                  started_value,
                   class: "form-control input-sm text-center",
                   style: "width: 100px; margin: 0 auto;" %>
             </td>
             <td class="text-center">
+              <% finished_value = @form_params&.dig(day.id.to_s, 'finished_at') || day.finished_at&.strftime("%H:%M") %>
               <%= time_field_tag "attendances[#{day.id}][finished_at]",
-                  day.finished_at&.strftime("%H:%M"),
+                  finished_value,
                   class: "form-control input-sm text-center",
                   style: "width: 100px; margin: 0 auto;" %>
             </td>
@@ -82,8 +84,9 @@
               <% end %>
             </td>
             <td class="text-center">
+              <% note_value = @form_params&.dig(day.id.to_s, 'note') || day.note %>
               <%= text_field_tag "attendances[#{day.id}][note]",
-                  day.note,
+                  note_value,
                   class: "form-control input-sm",
                   style: "width: 150px; margin: 0 auto;",
                   placeholder: "備考" %>
@@ -117,12 +120,38 @@
     </table>
   </div>
 
+  <!-- 承認者選択 -->
+  <div class="row" style="margin: 20px 0;">
+    <div class="col-md-6 col-md-offset-3">
+      <div class="panel panel-default">
+        <div class="panel-heading">
+          <h4 class="panel-title">承認者選択</h4>
+        </div>
+        <div class="panel-body">
+          <div class="form-group">
+            <label>承認者を選択 <span class="text-danger">*</span></label>
+            <%= form.select :approver_id,
+                options_from_collection_for_select(
+                  User.manager.where.not(id: @user.id).order(:name),
+                  :id,
+                  :name,
+                  @approver_id || @user.manager_id
+                ),
+                { prompt: "承認者を選択してください" },
+                class: "form-control" %>
+            <p class="help-block">勤怠変更がある場合、選択した承認者に申請が送信されます。</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- ボタン群 -->
   <div class="text-center" style="margin: 30px 0;">
-    <%= form.submit "更新", class: "btn btn-primary btn-lg",
+    <%= form.submit "勤怠変更申請を送信", class: "btn btn-primary btn-lg",
         style: "margin-right: 20px; padding: 10px 30px;",
-        onclick: "return confirm('勤怠情報を更新してもよろしいですか？')" %>
-    <%= link_to "戻る", user_path(@user), class: "btn btn-primary btn-lg",
+        onclick: "return confirm('勤怠変更申請を送信してもよろしいですか？')" %>
+    <%= link_to "戻る", user_path(@user), class: "btn btn-default btn-lg",
         style: "padding: 10px 30px;" %>
   </div>
 <% end %>

@@ -14,7 +14,8 @@ class AttendancesController < ApplicationController
   end
 
   def update_one_month
-    process_bulk_attendance_update
+    set_month_range
+    @change_count = process_bulk_attendance_update
     handle_update_success
   rescue StandardError => e
     handle_update_error(e)

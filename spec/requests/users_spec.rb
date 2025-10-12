@@ -587,4 +587,130 @@ RSpec.describe "Users", type: :request do
       end
     end
   end
+
+  describe "GET /users/:id/edit (管理者自己編集制限)" do
+    let(:admin) do
+      User.create!(
+        name: "管理者",
+        email: "admin_self_edit_#{Time.current.to_i}@example.com",
+        password: "password123",
+        role: :admin,
+        basic_time: Time.zone.parse("08:00"),
+        work_time: Time.zone.parse("07:30")
+      )
+    end
+
+    let(:employee) do
+      User.create!(
+        name: "社員",
+        email: "employee_#{Time.current.to_i}@example.com",
+        password: "password123",
+        role: :employee,
+        basic_time: Time.zone.parse("08:00"),
+        work_time: Time.zone.parse("07:30")
+      )
+    end
+
+    context "管理者が自分の編集ページにアクセスする場合" do
+      before do
+        post login_path, params: { session: { email: admin.email, password: "password123" } }
+      end
+
+      it "ルートページにリダイレクトされること" do
+        get edit_user_path(admin)
+        expect(response).to redirect_to(root_path)
+      end
+
+      it "エラーメッセージが表示されること" do
+        get edit_user_path(admin)
+        expect(flash[:danger]).to eq("管理者は設定から自身の情報を編集できません。")
+      end
+    end
+
+    context "管理者が他ユーザーの編集ページにアクセスする場合" do
+      before do
+        post login_path, params: { session: { email: admin.email, password: "password123" } }
+      end
+
+      it "正常にアクセスできること" do
+        get edit_user_path(employee)
+        expect(response).to have_http_status(:success)
+      end
+    end
+  end
+
+  describe "PATCH /users/:id (管理者自己編集制限)" do
+    let(:admin) do
+      User.create!(
+        name: "管理者",
+        email: "admin_update_#{Time.current.to_i}@example.com",
+        password: "password123",
+        role: :admin,
+        basic_time: Time.zone.parse("08:00"),
+        work_time: Time.zone.parse("07:30")
+      )
+    end
+
+    let(:employee) do
+      User.create!(
+        name: "社員",
+        email: "employee_update_#{Time.current.to_i}@example.com",
+        password: "password123",
+        role: :employee,
+        basic_time: Time.zone.parse("08:00"),
+        work_time: Time.zone.parse("07:30")
+      )
+    end
+
+    context "管理者が自分の情報を更新しようとする場合" do
+      before do
+        post login_path, params: { session: { email: admin.email, password: "password123" } }
+      end
+
+      it "ルートページにリダイレクトされること" do
+        patch user_path(admin), params: {
+          user: {
+            name: "変更後の名前"
+          }
+        }
+        expect(response).to redirect_to(root_path)
+      end
+
+      it "エラーメッセージが表示されること" do
+        patch user_path(admin), params: {
+          user: {
+            name: "変更後の名前"
+          }
+        }
+        expect(flash[:danger]).to eq("管理者は設定から自身の情報を編集できません。")
+      end
+
+      it "情報が更新されないこと" do
+        original_name = admin.name
+        patch user_path(admin), params: {
+          user: {
+            name: "変更後の名前"
+          }
+        }
+        admin.reload
+        expect(admin.name).to eq(original_name)
+      end
+    end
+
+    context "管理者が他ユーザーの情報を更新する場合" do
+      before do
+        post login_path, params: { session: { email: admin.email, password: "password123" } }
+      end
+
+      it "正常に更新できること" do
+        patch user_path(employee), params: {
+          user: {
+            name: "更新された社員"
+          }
+        }
+        employee.reload
+        expect(employee.name).to eq("更新された社員")
+      end
+    end
+  end
 end

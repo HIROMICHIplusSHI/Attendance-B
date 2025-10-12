@@ -49,7 +49,8 @@ class ApplicationController < ActionController::Base
 
     # 自分が承認者として指定されている申請があるユーザーのみ閲覧可能
     MonthlyApproval.exists?(user: @user, approver: current_user) ||
-      OvertimeRequest.exists?(user: @user, approver: current_user)
+      OvertimeRequest.exists?(user: @user, approver: current_user) ||
+      AttendanceChangeRequest.exists?(requester: @user, approver: current_user)
   end
 
   # 月次データ設定

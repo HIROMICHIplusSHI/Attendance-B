@@ -168,7 +168,7 @@ RSpec.describe "Attendances", type: :request do
 
         it "フォームの送信ボタンが表示される" do
           get edit_one_month_user_attendances_path(general_user, date: Date.current)
-          expect(response.body).to include('更新')
+          expect(response.body).to include('勤怠変更申請を送信')
           expect(response.body).to include('form')
         end
 
@@ -215,9 +215,28 @@ RSpec.describe "Attendances", type: :request do
       end
     end
 
-    describe "PATCH /users/:user_id/attendances/update_one_month (1ヶ月勤怠一括更新)" do
+    describe "PATCH /users/:user_id/attendances/update_one_month (1ヶ月勤怠変更申請)" do
       let!(:first_attendance) { general_user.attendances.find_by(worked_on: Date.current.beginning_of_month) }
       let!(:second_attendance) { general_user.attendances.find_by(worked_on: Date.current.beginning_of_month + 1.day) }
+      let!(:manager_user) do
+        User.create!(
+          name: "上長ユーザー",
+          email: "manager_#{Time.current.to_i}@example.com",
+          password: "password123",
+          role: :manager,
+          department: "総務部",
+          basic_time: Time.current.change(hour: 8, min: 0),
+          work_time: Time.current.change(hour: 7, min: 30)
+        )
+      end
+
+      before do
+        # 既存の勤怠データに初期値を設定
+        first_attendance.update!(started_at: Time.zone.parse("#{first_attendance.worked_on} 08:00"),
+                                 finished_at: Time.zone.parse("#{first_attendance.worked_on} 17:00"))
+        second_attendance.update!(started_at: Time.zone.parse("#{second_attendance.worked_on} 08:00"),
+                                  finished_at: Time.zone.parse("#{second_attendance.worked_on} 17:00"))
+      end
 
       context "管理者でログイン時" do
         before do
@@ -227,40 +246,51 @@ RSpec.describe "Attendances", type: :request do
         context "有効なパラメータの場合" do
           let(:valid_params) do
             {
-              user_id: general_user.id,
+              approver_id: manager_user.id,
               attendances: {
                 first_attendance.id.to_s => {
                   started_at: "09:00",
                   finished_at: "18:00",
-                  note: "通常勤務"
+                  note: "電車遅延のため"
                 },
                 second_attendance.id.to_s => {
                   started_at: "10:00",
                   finished_at: "19:00",
-                  note: "遅刻"
+                  note: "病院受診のため"
                 }
               }
             }
           end
 
-          it "勤怠データが一括更新される" do
+          it "AttendanceChangeRequestが2件作成される" do
+            expect do
+              patch update_one_month_user_attendances_path(general_user), params: valid_params
+            end.to change(AttendanceChangeRequest, :count).by(2)
+          end
+
+          it "作成されたAttendanceChangeRequestの内容が正しい" do
+            patch update_one_month_user_attendances_path(general_user), params: valid_params
+
+            request1 = AttendanceChangeRequest.find_by(attendance: first_attendance)
+            expect(request1.requester).to eq(general_user)
+            expect(request1.approver).to eq(manager_user)
+            expect(request1.requested_started_at.strftime("%H:%M")).to eq("09:00")
+            expect(request1.requested_finished_at.strftime("%H:%M")).to eq("18:00")
+            expect(request1.change_reason).to eq("電車遅延のため")
+            expect(request1.status).to eq("pending")
+          end
+
+          it "元の勤怠データは更新されない" do
             patch update_one_month_user_attendances_path(general_user), params: valid_params
 
             first_attendance.reload
-            second_attendance.reload
-
-            expect(first_attendance.started_at.strftime("%H:%M")).to eq("09:00")
-            expect(first_attendance.finished_at.strftime("%H:%M")).to eq("18:00")
-            expect(first_attendance.note).to eq("通常勤務")
-
-            expect(second_attendance.started_at.strftime("%H:%M")).to eq("10:00")
-            expect(second_attendance.finished_at.strftime("%H:%M")).to eq("19:00")
-            expect(second_attendance.note).to eq("遅刻")
+            expect(first_attendance.started_at.strftime("%H:%M")).to eq("08:00")
+            expect(first_attendance.finished_at.strftime("%H:%M")).to eq("17:00")
           end
 
           it "成功メッセージが表示される" do
             patch update_one_month_user_attendances_path(general_user), params: valid_params
-            expect(flash[:success]).to be_present
+            expect(flash[:success]).to eq("2件の勤怠変更申請を送信しました")
           end
 
           it "ユーザー詳細ページにリダイレクトされる" do
@@ -269,46 +299,74 @@ RSpec.describe "Attendances", type: :request do
           end
         end
 
-        context "無効なパラメータの場合" do
-          let(:invalid_params) do
+        context "承認者未選択の場合" do
+          let(:no_approver_params) do
             {
-              user_id: general_user.id,
               attendances: {
                 first_attendance.id.to_s => {
-                  started_at: "25:00", # 無効な時間
+                  started_at: "09:00",
                   finished_at: "18:00",
-                  note: "無効データ"
+                  note: "変更理由"
                 }
               }
             }
           end
 
-          it "勤怠データが更新されない" do
-            original_started_at = first_attendance.started_at
-            patch update_one_month_user_attendances_path(general_user), params: invalid_params
-
-            first_attendance.reload
-            expect(first_attendance.started_at).to eq(original_started_at)
+          it "AttendanceChangeRequestが作成されない" do
+            expect do
+              patch update_one_month_user_attendances_path(general_user), params: no_approver_params
+            end.not_to change(AttendanceChangeRequest, :count)
           end
 
           it "エラーメッセージが表示される" do
-            patch update_one_month_user_attendances_path(general_user), params: invalid_params
-            expect(flash[:danger]).to be_present
+            patch update_one_month_user_attendances_path(general_user), params: no_approver_params
+            expect(flash[:danger]).to eq("承認者を選択してください。")
           end
 
-          it "編集ページにリダイレクトされる" do
-            patch update_one_month_user_attendances_path(general_user), params: invalid_params
-            expect(response).to redirect_to(edit_one_month_user_attendances_path(general_user))
+          it "編集ページが再表示される" do
+            patch update_one_month_user_attendances_path(general_user), params: no_approver_params
+            expect(response).to have_http_status(:unprocessable_entity)
+          end
+        end
+
+        context "変更理由（備考）未入力の場合" do
+          let(:no_reason_params) do
+            {
+              approver_id: manager_user.id,
+              attendances: {
+                first_attendance.id.to_s => {
+                  started_at: "09:00",
+                  finished_at: "18:00",
+                  note: "" # 備考が空
+                }
+              }
+            }
+          end
+
+          it "AttendanceChangeRequestが作成されない" do
+            expect do
+              patch update_one_month_user_attendances_path(general_user), params: no_reason_params
+            end.not_to change(AttendanceChangeRequest, :count)
+          end
+
+          it "エラーメッセージが表示される" do
+            patch update_one_month_user_attendances_path(general_user), params: no_reason_params
+            expect(flash[:danger]).to match(/変更理由（備考）を入力してください/)
+          end
+
+          it "編集ページが再表示される" do
+            patch update_one_month_user_attendances_path(general_user), params: no_reason_params
+            expect(response).to have_http_status(:unprocessable_entity)
           end
         end
 
         context "時間バリデーションの場合" do
           let(:invalid_time_params) do
             {
-              user_id: general_user.id,
+              approver_id: manager_user.id,
               attendances: {
                 first_attendance.id.to_s => {
-                  started_at: "18:00", # 出勤時間が退勤時間より遅い
+                  started_at: "18:00",
                   finished_at: "09:00",
                   note: "時間エラー"
                 }
@@ -318,68 +376,82 @@ RSpec.describe "Attendances", type: :request do
 
           it "出勤時間が退勤時間より遅い場合はエラーメッセージが表示される" do
             patch update_one_month_user_attendances_path(general_user), params: invalid_time_params
-
-            expect(flash[:danger]).to be_present
             expect(flash[:danger]).to match(/出勤時間が退勤時間より遅いか同じ時間です/)
           end
 
-          it "出勤時間が退勤時間より遅い場合は勤怠データが更新されない" do
-            original_started_at = first_attendance.started_at
-            original_finished_at = first_attendance.finished_at
-
-            patch update_one_month_user_attendances_path(general_user), params: invalid_time_params
-
-            first_attendance.reload
-            expect(first_attendance.started_at).to eq(original_started_at)
-            expect(first_attendance.finished_at).to eq(original_finished_at)
+          it "出勤時間が退勤時間より遅い場合はAttendanceChangeRequestが作成されない" do
+            expect do
+              patch update_one_month_user_attendances_path(general_user), params: invalid_time_params
+            end.not_to change(AttendanceChangeRequest, :count)
           end
 
           it "出勤時間が退勤時間と同じ場合はエラーメッセージが表示される" do
             same_time_params = {
-              user_id: general_user.id,
+              approver_id: manager_user.id,
               attendances: {
                 first_attendance.id.to_s => {
                   started_at: "09:00",
-                  finished_at: "09:00", # 同じ時間
+                  finished_at: "09:00",
                   note: "同じ時間エラー"
                 }
               }
             }
 
             patch update_one_month_user_attendances_path(general_user), params: same_time_params
-
-            expect(flash[:danger]).to be_present
             expect(flash[:danger]).to match(/出勤時間が退勤時間より遅いか同じ時間です/)
           end
 
-          it "時間バリデーションエラー時は編集ページにリダイレクトされる" do
+          it "編集ページが再表示される" do
             patch update_one_month_user_attendances_path(general_user), params: invalid_time_params
-
-            expect(response).to redirect_to(edit_one_month_user_attendances_path(general_user))
+            expect(response).to have_http_status(:unprocessable_entity)
           end
         end
 
-        context "部分的な更新の場合" do
-          let(:partial_params) do
+        context "変更がない場合" do
+          let(:no_change_params) do
             {
-              user_id: general_user.id,
+              approver_id: manager_user.id,
               attendances: {
                 first_attendance.id.to_s => {
-                  started_at: "09:30",
-                  finished_at: "", # 空文字
-                  note: "午前のみ"
+                  started_at: "08:00", # 既存と同じ
+                  finished_at: "17:00", # 既存と同じ
+                  note: "変更理由"
                 }
               }
             }
           end
 
-          it "出勤時間のみ更新され、退勤時間は空のまま" do
-            patch update_one_month_user_attendances_path(general_user), params: partial_params
+          it "AttendanceChangeRequestが作成されない" do
+            expect do
+              patch update_one_month_user_attendances_path(general_user), params: no_change_params
+            end.not_to change(AttendanceChangeRequest, :count)
+          end
 
-            first_attendance.reload
-            expect(first_attendance.started_at.strftime("%H:%M")).to eq("09:30")
-            expect(first_attendance.finished_at).to be_nil
-            expect(first_attendance.note).to eq("午前のみ")
+          it "エラーメッセージが表示される" do
+            patch update_one_month_user_attendances_path(general_user), params: no_change_params
+            expect(flash[:danger]).to eq("変更がありません。勤怠時間を変更してから申請してください。")
+          end
+        end
+
+        context "フォーム値が保持される場合" do
+          let(:error_params) do
+            {
+              approver_id: manager_user.id,
+              attendances: {
+                first_attendance.id.to_s => {
+                  started_at: "09:00",
+                  finished_at: "18:00",
+                  note: "" # エラーを引き起こす
+                }
+              }
+            }
+          end
+
+          it "エラー時に編集ページが再表示される" do
+            patch update_one_month_user_attendances_path(general_user), params: error_params
+            expect(response).to have_http_status(:unprocessable_entity)
+            expect(response.body).to include("09:00")
+            expect(response.body).to include("18:00")
           end
         end
       end
@@ -389,23 +461,23 @@ RSpec.describe "Attendances", type: :request do
           post login_path, params: { session: { email: general_user.email, password: "password123" } }
         end
 
-        it "自分の勤怠データを一括更新できる" do
+        it "自分の勤怠変更申請を送信できる" do
           valid_params = {
-            user_id: general_user.id,
+            approver_id: manager_user.id,
             attendances: {
               first_attendance.id.to_s => {
                 started_at: "08:30",
                 finished_at: "17:30",
-                note: "自己更新"
+                note: "自己申請"
               }
             }
           }
 
-          patch update_one_month_user_attendances_path(general_user), params: valid_params
+          expect do
+            patch update_one_month_user_attendances_path(general_user), params: valid_params
+          end.to change(AttendanceChangeRequest, :count).by(1)
 
-          first_attendance.reload
-          expect(first_attendance.started_at.strftime("%H:%M")).to eq("08:30")
-          expect(first_attendance.note).to eq("自己更新")
+          expect(flash[:success]).to eq("1件の勤怠変更申請を送信しました")
         end
       end
 
@@ -414,14 +486,14 @@ RSpec.describe "Attendances", type: :request do
           post login_path, params: { session: { email: general_user.email, password: "password123" } }
         end
 
-        it "他人の勤怠データ更新が拒否される" do
+        it "他人の勤怠変更申請が拒否される" do
           valid_params = {
-            user_id: admin_user.id,
+            approver_id: manager_user.id,
             attendances: {
               "1" => {
                 started_at: "09:00",
                 finished_at: "18:00",
-                note: "不正更新"
+                note: "不正申請"
               }
             }
           }
@@ -433,10 +505,10 @@ RSpec.describe "Attendances", type: :request do
 
       context "未ログイン時" do
         it "ログインページにリダイレクトされる" do
-          delete logout_path  # ログアウト
+          delete logout_path
 
           valid_params = {
-            user_id: general_user.id,
+            approver_id: manager_user.id,
             attendances: {
               first_attendance.id.to_s => {
                 started_at: "09:00",
