@@ -246,17 +246,18 @@ RSpec.describe "Attendances", type: :request do
         context "有効なパラメータの場合" do
           let(:valid_params) do
             {
-              approver_id: manager_user.id,
               attendances: {
                 first_attendance.id.to_s => {
                   started_at: "09:00",
                   finished_at: "18:00",
-                  note: "電車遅延のため"
+                  note: "電車遅延のため",
+                  approver_id: manager_user.id
                 },
                 second_attendance.id.to_s => {
                   started_at: "10:00",
                   finished_at: "19:00",
-                  note: "病院受診のため"
+                  note: "病院受診のため",
+                  approver_id: manager_user.id
                 }
               }
             }
@@ -320,7 +321,7 @@ RSpec.describe "Attendances", type: :request do
 
           it "エラーメッセージが表示される" do
             patch update_one_month_user_attendances_path(general_user), params: no_approver_params
-            expect(flash[:danger]).to eq("承認者を選択してください。")
+            expect(flash[:danger]).to match(/の承認者を選択してください/)
           end
 
           it "編集ページが再表示される" do
@@ -332,12 +333,12 @@ RSpec.describe "Attendances", type: :request do
         context "変更理由（備考）未入力の場合" do
           let(:no_reason_params) do
             {
-              approver_id: manager_user.id,
               attendances: {
                 first_attendance.id.to_s => {
                   started_at: "09:00",
                   finished_at: "18:00",
-                  note: "" # 備考が空
+                  note: "", # 備考が空
+                  approver_id: manager_user.id
                 }
               }
             }
@@ -363,12 +364,12 @@ RSpec.describe "Attendances", type: :request do
         context "時間バリデーションの場合" do
           let(:invalid_time_params) do
             {
-              approver_id: manager_user.id,
               attendances: {
                 first_attendance.id.to_s => {
                   started_at: "18:00",
                   finished_at: "09:00",
-                  note: "時間エラー"
+                  note: "時間エラー",
+                  approver_id: manager_user.id
                 }
               }
             }
@@ -387,12 +388,12 @@ RSpec.describe "Attendances", type: :request do
 
           it "出勤時間が退勤時間と同じ場合はエラーメッセージが表示される" do
             same_time_params = {
-              approver_id: manager_user.id,
               attendances: {
                 first_attendance.id.to_s => {
                   started_at: "09:00",
                   finished_at: "09:00",
-                  note: "同じ時間エラー"
+                  note: "同じ時間エラー",
+                  approver_id: manager_user.id
                 }
               }
             }
@@ -463,12 +464,12 @@ RSpec.describe "Attendances", type: :request do
 
         it "自分の勤怠変更申請を送信できる" do
           valid_params = {
-            approver_id: manager_user.id,
             attendances: {
               first_attendance.id.to_s => {
                 started_at: "08:30",
                 finished_at: "17:30",
-                note: "自己申請"
+                note: "自己申請",
+                approver_id: manager_user.id
               }
             }
           }
