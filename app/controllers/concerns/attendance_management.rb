@@ -83,10 +83,6 @@ module AttendanceManagement
   end
 
   def process_bulk_attendance_update
-    approver_id = params[:approver_id]
-
-    raise "承認者を選択してください" if approver_id.blank?
-
     change_count = 0
 
     ActiveRecord::Base.transaction do
@@ -94,10 +90,13 @@ module AttendanceManagement
         attendance = @user.attendances.find(id)
 
         # 変更があるかチェック
-        if attendance_changes?(attendance, attendance_params)
-          create_attendance_change_request(attendance, attendance_params, approver_id)
-          change_count += 1
-        end
+        next unless attendance_changes?(attendance, attendance_params)
+
+        approver_id = attendance_params[:approver_id]
+        raise "#{attendance.worked_on.strftime('%m/%d')}の承認者を選択してください" if approver_id.blank?
+
+        create_attendance_change_request(attendance, attendance_params, approver_id)
+        change_count += 1
       end
     end
 
@@ -197,7 +196,7 @@ module AttendanceManagement
   def format_error_message(error)
     case error.message
     when /承認者を選択してください/
-      "承認者を選択してください。"
+      error.message
     when /変更がありません/
       "変更がありません。勤怠時間を変更してから申請してください。"
     when /変更理由（備考）を入力してください/, /出勤時間が退勤時間より/
@@ -211,6 +210,5 @@ module AttendanceManagement
     @attendances = fetch_monthly_attendances
     @worked_sum = @attendances.where.not(started_at: nil, finished_at: nil).count
     @form_params = params[:attendances] || {}
-    @approver_id = params[:approver_id]
   end
 end
