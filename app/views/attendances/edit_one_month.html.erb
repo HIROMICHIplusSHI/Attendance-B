@@ -49,6 +49,7 @@
           <th class="text-center">退勤時間</th>
           <th class="text-center">在社時間</th>
           <th class="text-center">備考</th>
+          <th class="text-center">指示者確認印</th>
         </tr>
       </thead>
       <tbody>
@@ -91,6 +92,17 @@
                   style: "width: 150px; margin: 0 auto;",
                   placeholder: "備考" %>
             </td>
+            <td class="text-center">
+              <% approver_value = @form_params&.dig(day.id.to_s, 'approver_id') || @user.manager_id %>
+              <%= select_tag "attendances[#{day.id}][approver_id]",
+                  options_from_collection_for_select(
+                    User.manager.where.not(id: @user.id).order(:name),
+                    :id,
+                    :name,
+                    approver_value
+                  ),
+                  { prompt: "選択してください", class: "form-control input-sm", style: "width: 150px; margin: 0 auto;" } %>
+            </td>
           </tr>
         <% end %>
       </tbody>
@@ -99,14 +111,14 @@
         <tr>
           <td colspan="2" class="text-center">累計日数</td>
           <td colspan="2" class="text-center">総合勤務時間</td>
-          <td colspan="2" class="text-center">累計在社時間</td>
+          <td colspan="3" class="text-center">累計在社時間</td>
         </tr>
         <tr>
           <td colspan="2" class="text-center"><%= @attendances.count %></td>
           <td colspan="2" class="text-center">
             <%= format_basic_info(@user.work_time).to_f * @worked_sum %>
           </td>
-          <td colspan="2" class="text-center">
+          <td colspan="3" class="text-center">
             <% total_working_times = 0.0 %>
             <% @attendances.each do |day| %>
               <% if day.started_at.present? && day.finished_at.present? %>
@@ -118,32 +130,6 @@
         </tr>
       </tfoot>
     </table>
-  </div>
-
-  <!-- 承認者選択 -->
-  <div class="row" style="margin: 20px 0;">
-    <div class="col-md-6 col-md-offset-3">
-      <div class="panel panel-default">
-        <div class="panel-heading">
-          <h4 class="panel-title">承認者選択</h4>
-        </div>
-        <div class="panel-body">
-          <div class="form-group">
-            <label>承認者を選択 <span class="text-danger">*</span></label>
-            <%= form.select :approver_id,
-                options_from_collection_for_select(
-                  User.manager.where.not(id: @user.id).order(:name),
-                  :id,
-                  :name,
-                  @approver_id || @user.manager_id
-                ),
-                { prompt: "承認者を選択してください" },
-                class: "form-control" %>
-            <p class="help-block">勤怠変更がある場合、選択した承認者に申請が送信されます。</p>
-          </div>
-        </div>
-      </div>
-    </div>
   </div>
 
   <!-- ボタン群 -->
